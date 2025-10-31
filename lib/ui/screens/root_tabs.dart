@@ -23,8 +23,16 @@ class _RootTabsState extends State<RootTabs> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Settings'),
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.menu),
+            selectedIcon: Icon(Icons.settings),
+            label: 'More',
+          ),
         ],
       ),
       floatingActionButton: _index == 0
@@ -36,4 +44,3 @@ class _RootTabsState extends State<RootTabs> {
     );
   }
 }
-

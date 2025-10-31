@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bounceable/flutter_bounceable.dart';
 import 'package:intl/intl.dart';
 import 'package:sizer/sizer.dart';
 
@@ -22,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final db = Get.find<AppDb>();
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.all(5.w),
+        padding: EdgeInsets.all(2.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -134,91 +135,25 @@ class _HomeScreenState extends State<HomeScreen> {
                               )
                             : ListView.separated(
                                 itemCount: filtered.length,
+                                padding: EdgeInsets.zero,
                                 separatorBuilder: (_, __) =>
                                     SizedBox(height: 1.h),
                                 itemBuilder: (_, i) {
                                   final s = filtered[i];
                                   final sign = s.returnPct >= 0 ? '+' : '';
                                   final inc = s.finalValue - s.amount;
-                                  return Dismissible(
-                                    key: ValueKey(s.id),
-                                    background: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.shade100,
+                                  return Bounceable(
+                                    onTap: () => Get.toNamed(
+                                      '/saving-detail',
+                                      arguments: s,
+                                    ),
+                                    child: Card(
+                                      shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      alignment: Alignment.centerLeft,
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 4.w,
-                                      ),
-                                      child: const Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                    secondaryBackground: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.shade100,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      alignment: Alignment.centerRight,
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 4.w,
-                                      ),
-                                      child: const Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                    confirmDismiss: (_) async {
-                                      return await showDialog<bool>(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title: const Text(
-                                                'Delete saving?',
-                                              ),
-                                              content: const Text(
-                                                'This action cannot be undone.',
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(ctx, false),
-                                                  child: const Text('Cancel'),
-                                                ),
-                                                FilledButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(ctx, true),
-                                                  child: const Text('Delete'),
-                                                ),
-                                              ],
-                                            ),
-                                          ) ??
-                                          false;
-                                    },
-                                    onDismissed: (_) async {
-                                      await db.deleteSaving(s.id);
-                                      Get.snackbar(
-                                        'Deleted',
-                                        'Removed from your savings',
-                                      );
-                                    },
-                                    child: InkWell(
-                                      onTap: () => Get.toNamed(
-                                        '/saving-detail',
-                                        arguments: s,
-                                      ),
-                                      child: Container(
+                                      child: Padding(
                                         padding: EdgeInsets.all(4.w),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade100,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          border: Border.all(
-                                            color: Colors.grey.shade300,
-                                          ),
-                                        ),
+
                                         child: Row(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -284,53 +219,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     ],
                                                   ),
                                                 ],
-                                              ),
-                                            ),
-                                            IconButton(
-                                              onPressed: () async {
-                                                final confirm = await showDialog<bool>(
-                                                  context: context,
-                                                  builder: (ctx) => AlertDialog(
-                                                    title: const Text(
-                                                      'Delete saving?',
-                                                    ),
-                                                    content: const Text(
-                                                      'This action cannot be undone.',
-                                                    ),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(
-                                                              ctx,
-                                                              false,
-                                                            ),
-                                                        child: const Text(
-                                                          'Cancel',
-                                                        ),
-                                                      ),
-                                                      FilledButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(
-                                                              ctx,
-                                                              true,
-                                                            ),
-                                                        child: const Text(
-                                                          'Delete',
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                                if (confirm == true) {
-                                                  await db.deleteSaving(s.id);
-                                                  Get.snackbar(
-                                                    'Deleted',
-                                                    'Removed from your savings',
-                                                  );
-                                                }
-                                              },
-                                              icon: const Icon(
-                                                Icons.delete_outline,
                                               ),
                                             ),
                                           ],

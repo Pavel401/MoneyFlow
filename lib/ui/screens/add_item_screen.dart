@@ -34,28 +34,39 @@ class _AddItemScreenState extends State<AddItemScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Add Custom Item')),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(5.w),
+        padding: EdgeInsets.all(2.w),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Create a custom purchase with icon + category', style: TextStyle(fontSize: 11.sp)),
+              Text(
+                'Create a custom purchase with icon + category',
+                style: TextStyle(fontSize: 11.sp),
+              ),
               SizedBox(height: 2.h),
               TextFormField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(labelText: 'Name'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter a name' : null,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Enter a name' : null,
               ),
               SizedBox(height: 1.5.h),
               Obx(() {
                 final cats = items.categories;
                 return DropdownButtonFormField<String>(
-                  value: _selectedCategory != null && cats.contains(_selectedCategory) ? _selectedCategory : null,
-                  items: cats.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  value:
+                      _selectedCategory != null &&
+                          cats.contains(_selectedCategory)
+                      ? _selectedCategory
+                      : null,
+                  items: cats
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
                   onChanged: (v) => setState(() => _selectedCategory = v),
                   decoration: const InputDecoration(labelText: 'Category'),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Select a category' : null,
+                  validator: (v) =>
+                      (v == null || v.isEmpty) ? 'Select a category' : null,
                 );
               }),
               SizedBox(height: 1.5.h),
@@ -73,21 +84,29 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   final picked = await showModalBottomSheet<String>(
                     context: context,
                     isScrollControlled: true,
-                    builder: (context) => _IconPickerSheet(initial: _selectedIconName),
+                    builder: (context) =>
+                        _IconPickerSheet(initial: _selectedIconName),
                   );
-                  if (picked != null) setState(() => _selectedIconName = picked);
+                  if (picked != null)
+                    setState(() => _selectedIconName = picked);
                 },
               ),
               SizedBox(height: 1.5.h),
               TextFormField(
                 controller: _priceCtrl,
-                decoration: const InputDecoration(labelText: 'Default price (optional)'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Default price (optional)',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
               SizedBox(height: 1.5.h),
               TextFormField(
                 controller: _descCtrl,
-                decoration: const InputDecoration(labelText: 'Description (optional)'),
+                decoration: const InputDecoration(
+                  labelText: 'Description (optional)',
+                ),
                 maxLines: 2,
               ),
               SizedBox(height: 1.h),
@@ -97,13 +116,17 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     if (!_formKey.currentState!.validate()) return;
-                    final price = double.tryParse(_priceCtrl.text.replaceAll(',', ''));
+                    final price = double.tryParse(
+                      _priceCtrl.text.replaceAll(',', ''),
+                    );
                     await items.addItem(
                       name: _nameCtrl.text.trim(),
                       category: _selectedCategory!,
                       emoji: null,
                       iconName: _selectedIconName,
-                      description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+                      description: _descCtrl.text.trim().isEmpty
+                          ? null
+                          : _descCtrl.text.trim(),
                       kidSpecific: true,
                       defaultPrice: price,
                     );
@@ -113,7 +136,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   icon: const Icon(Icons.save),
                   label: const Text('Save'),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -158,13 +181,24 @@ class _IconPickerSheetState extends State<_IconPickerSheet> {
           children: [
             Row(
               children: [
-                const Expanded(child: Text('Pick an icon', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                const Expanded(
+                  child: Text(
+                    'Pick an icon',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ],
             ),
             TextField(
               controller: _searchCtrl,
-              decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Search icons'),
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.search),
+                hintText: 'Search icons',
+              ),
               onChanged: (v) => setState(() => _query = v),
             ),
             const SizedBox(height: 12),
@@ -185,11 +219,15 @@ class _IconPickerSheetState extends State<_IconPickerSheet> {
                     child: Center(
                       child: CircleAvatar(
                         backgroundColor: selected
-                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.15)
                             : null,
                         child: Icon(
                           iconFromName(name),
-                          color: selected ? Theme.of(context).colorScheme.primary : null,
+                          color: selected
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
                         ),
                       ),
                     ),

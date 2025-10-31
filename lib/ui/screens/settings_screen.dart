@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:growthapp/ui/components/tap_tile.dart';
+import 'package:growthapp/ui/screens/profile_screen.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../data/investments.dart';
 import '../../services/market_service.dart';
 import '../../db/app_db.dart';
 import 'package:drift/drift.dart' as d;
+import 'package:growthapp/ui/theme.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -21,7 +25,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _nameCtrl = TextEditingController();
   final _imageCtrl = TextEditingController();
   DateTime? _dob;
-  bool _loadingProfile = true;
+  final bool _loadingProfile = true;
+  String _appVersion = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      setState(() => _appVersion = '${info.version}+${info.buildNumber}');
+    } catch (_) {
+      // Fallback to empty to avoid UI crash
+      setState(() => _appVersion = '');
+    }
+  }
 
   Future<void> _sync() async {
     setState(() {
@@ -37,25 +58,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() => _syncing = false);
       Get.snackbar('Sync complete', 'Market data updated');
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadProfile();
-  }
-
-  Future<void> _loadProfile() async {
-    final db = Get.isRegistered<AppDb>()
-        ? Get.find<AppDb>()
-        : Get.put(AppDb(), permanent: true);
-    final p = await db.getProfile();
-    if (p != null) {
-      _nameCtrl.text = p.name ?? '';
-      _imageCtrl.text = p.imagePath ?? '';
-      _dob = p.dob;
-    }
-    setState(() => _loadingProfile = false);
   }
 
   Future<void> _saveProfile() async {
@@ -75,6 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Get.find<ThemeProvider>();
     return Scaffold(
       // Let the Scaffold adjust for the keyboard to avoid overflow
       resizeToAvoidBottomInset: true,
@@ -91,59 +94,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Profile',
+                    'Appearance',
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   SizedBox(height: 1.h),
-                  if (_loadingProfile)
-                    const LinearProgressIndicator()
-                  else ...[
-                    TextField(
-                      controller: _nameCtrl,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                    ),
-                    SizedBox(height: 1.h),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _dob == null
-                                ? 'DOB: Not set'
-                                : 'DOB: ${_dob!.toLocal().toString().split(' ').first}',
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            final init = _dob ?? DateTime(2008, 1, 1);
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: init,
-                              firstDate: DateTime(1990),
-                              lastDate: DateTime.now(),
-                            );
-                            if (picked != null) setState(() => _dob = picked);
-                          },
-                          child: const Text('Pick DOB'),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 1.h),
-                    TextField(
-                      controller: _imageCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Image path or URL',
+                  AnimatedBuilder(
+                    animation: themeProvider,
+                    builder: (context, _) => TapTile(
+                      title: 'Dark Mode',
+                      subtitle: 'Reduce eye strain with a darker theme',
+                      leadingIcon: Icons.dark_mode_outlined,
+                      trailing: Switch.adaptive(
+                        value: themeProvider.isDarkMode,
+                        onChanged: (_) => themeProvider.toggleTheme(),
                       ),
+                      onTap: null,
                     ),
-                    SizedBox(height: 1.h),
-                    ElevatedButton(
-                      onPressed: _saveProfile,
-                      child: const Text('Save Profile'),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    'Account',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
                     ),
-                    SizedBox(height: 3.h),
-                  ],
+                  ),
+                  SizedBox(height: 1.h),
+                  TapTile(
+                    title: 'Profile',
+                    subtitle: 'Set your name, image, and date of birth',
+                    leadingIcon: Icons.person_outline,
+                    onTap: () async {
+                      await Get.to(() => ProfileScreen());
+                      setState(() {});
+                    },
+                  ),
                   Text(
                     'Market Data',
                     style: TextStyle(
@@ -152,19 +140,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   SizedBox(height: 1.h),
-                  Text(
-                    'Manually pull and cache 1-year prices for all investments.',
-                  ),
-                  SizedBox(height: 2.h),
-                  ElevatedButton.icon(
-                    onPressed: _syncing ? null : _sync,
-                    icon: const Icon(Icons.sync),
-                    label: const Text('Sync Market Data'),
+                  TapTile(
+                    title: 'Sync Market Data',
+                    subtitle: 'Pull and cache 1-year prices for all investments',
+                    leadingIcon: Icons.sync_outlined,
+                    trailing: _syncing
+                        ? SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : null,
+                    onTap: _syncing ? null : _sync,
                   ),
                   if (_syncing) ...[
                     SizedBox(height: 2.h),
                     LinearProgressIndicator(value: _progress),
                   ],
+                  SizedBox(height: 2.h),
+                  Text(
+                    'About',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 1.h),
+                  TapTile(
+                    title: 'App Version',
+                    subtitle: 'Build and version information',
+                    leadingIcon: Icons.info_outline,
+                    trailing: Text(
+                      _appVersion.isEmpty ? '-' : _appVersion,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.7)),
+                    ),
+                    onTap: null,
+                  ),
                 ],
               ),
             ),
