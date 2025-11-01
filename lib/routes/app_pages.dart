@@ -9,6 +9,7 @@ import '../ui/screens/settings_screen.dart';
 import '../ui/screens/root_tabs.dart';
 import '../ui/screens/add_item_screen.dart';
 import '../ui/screens/saving_detail_screen.dart';
+import '../ui/screens/admin_db_viewer_screen.dart';
 
 class Routes {
   static const welcome = '/';
@@ -20,6 +21,7 @@ class Routes {
   static const settings = '/settings';
   static const tabs = '/tabs';
   static const savingDetail = '/saving-detail';
+  static const adminDbViewer = '/admin-db-viewer';
 }
 
 class AppPages {
@@ -38,5 +40,9 @@ class AppPages {
     GetPage(name: Routes.result, page: () => const ResultScreen()),
     GetPage(name: Routes.settings, page: () => const SettingsScreen()),
     GetPage(name: Routes.savingDetail, page: () => const SavingDetailScreen()),
+    GetPage(
+      name: Routes.adminDbViewer,
+      page: () => const AdminDbViewerScreen(),
+    ),
   ];
 }

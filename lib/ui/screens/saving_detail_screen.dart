@@ -7,10 +7,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:growthapp/ui/colors.dart';
 import 'package:growthapp/ui/components/kid_friendly_app_bar.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../db/app_db.dart';
 import '../icon_utils.dart';
+import '../components/awesome_snackbar_helper.dart';
 
 class SavingDetailScreen extends StatelessWidget {
   const SavingDetailScreen({super.key});
@@ -278,14 +280,27 @@ class SavingDetailScreen extends StatelessWidget {
             SizedBox(height: 3.h),
 
             // Growth Projection Section
-            Text(
-              '📈 Growth Projections',
-              style: GoogleFonts.nunito(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w800,
-                color: colorScheme.onSurface,
-              ),
-            ).animate(delay: 200.ms).fadeIn().slideX(begin: -0.3),
+            Row(
+              children: [
+                Lottie.asset(
+                  'assets/lotties/analytics.json',
+                  width: 12.w,
+                  height: 12.w,
+                  fit: BoxFit.contain,
+                  repeat: true,
+                  animate: true,
+                ),
+                SizedBox(width: 2.w),
+                Text(
+                  'Growth Projections',
+                  style: GoogleFonts.nunito(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w800,
+                    color: colorScheme.onSurface,
+                  ),
+                ).animate(delay: 200.ms).fadeIn().slideX(begin: -0.3),
+              ],
+            ),
 
             SizedBox(height: 1.h),
 
@@ -455,58 +470,6 @@ class SavingDetailScreen extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: 3.h),
-
-            // Fun Facts Card
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(5.w),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    TurfitColors.accentLight.withValues(alpha: 0.1),
-                    TurfitColors.tertiaryLight.withValues(alpha: 0.1),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: TurfitColors.accentLight.withValues(alpha: 0.3),
-                  width: 1.5,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text('🎯', style: TextStyle(fontSize: 24.sp)),
-                      SizedBox(width: 2.w),
-                      Text(
-                        'Did you know?',
-                        style: GoogleFonts.nunito(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w800,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    _getFunFact(saving),
-                    style: GoogleFonts.nunito(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
-                      color: TurfitColors.grey700(context),
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ).animate(delay: 1200.ms).fadeIn().slideY(begin: 0.2),
-
             SizedBox(height: 2.h),
           ],
         ),
@@ -591,13 +554,11 @@ class SavingDetailScreen extends StatelessWidget {
     if (confirm == true) {
       await db.deleteSaving(saving.id);
       Get.back();
-      Get.snackbar(
-        '✅ Deleted',
+
+      AwesomeSnackbarHelper.showSuccess(
+        context,
+        'Deleted!',
         'Removed "${saving.itemName}" from your savings',
-        backgroundColor: TurfitColors.successLight.withValues(alpha: 0.1),
-        colorText: TurfitColors.successLight,
-        borderRadius: 12,
-        margin: EdgeInsets.all(4.w),
       );
     }
   }

@@ -5,6 +5,7 @@ import 'package:sizer/sizer.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_bounceable/flutter_bounceable.dart';
+import 'package:flutter_confetti/flutter_confetti.dart';
 
 import '../../controllers/selection_controller.dart';
 import '../../controllers/market_controller.dart';
@@ -12,6 +13,7 @@ import '../../services/market_service.dart';
 import '../../db/app_db.dart';
 import '../colors.dart';
 import '../components/kid_friendly_app_bar.dart';
+import '../components/awesome_snackbar_helper.dart';
 import 'package:drift/drift.dart' as d;
 
 class ResultScreen extends StatefulWidget {
@@ -293,27 +295,27 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                   child: Column(
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.lightbulb_outline,
-                            size: 16.sp,
-                            color: TurfitColors.primaryLight,
-                          ),
-                          SizedBox(width: 2.w),
-                          Expanded(
-                            child: Text(
-                              'Past performance is not an indicator of future results.',
-                              style: GoogleFonts.nunito(
-                                fontSize: 9.sp,
-                                fontWeight: FontWeight.w600,
-                                color: TurfitColors.grey600(context),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 1.h),
+                      // Row(
+                      //   children: [
+                      //     Icon(
+                      //       Icons.lightbulb_outline,
+                      //       size: 16.sp,
+                      //       color: TurfitColors.primaryLight,
+                      //     ),
+                      //     SizedBox(width: 2.w),
+                      //     Expanded(
+                      //       child: Text(
+                      //         'Past performance is not an indicator of future results.',
+                      //         style: GoogleFonts.nunito(
+                      //           fontSize: 9.sp,
+                      //           fontWeight: FontWeight.w600,
+                      //           color: TurfitColors.grey600(context),
+                      //         ),
+                      //       ),
+                      //     ),
+                      //   ],
+                      // ),
+                      // SizedBox(height: 1.h),
                       Row(
                         children: [
                           Icon(
@@ -343,36 +345,36 @@ class _ResultScreenState extends State<ResultScreen> {
                 // Action Buttons
                 Row(
                   children: [
-                    Expanded(
-                      child: Bounceable(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          Get.offAllNamed('/');
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 2.h),
-                          decoration: BoxDecoration(
-                            color: TurfitColors.white(context),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: TurfitColors.grey300(context),
-                              width: 1,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Try Another Item',
-                              style: GoogleFonts.nunito(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w700,
-                                color: TurfitColors.grey700(context),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 3.w),
+                    // Expanded(
+                    //   child: Bounceable(
+                    //     onTap: () {
+                    //       HapticFeedback.lightImpact();
+                    //       Get.offAllNamed('/');
+                    //     },
+                    //     child: Container(
+                    //       padding: EdgeInsets.symmetric(vertical: 2.h),
+                    //       decoration: BoxDecoration(
+                    //         color: TurfitColors.white(context),
+                    //         borderRadius: BorderRadius.circular(14),
+                    //         border: Border.all(
+                    //           color: TurfitColors.grey300(context),
+                    //           width: 1,
+                    //         ),
+                    //       ),
+                    //       child: Center(
+                    //         child: Text(
+                    //           'Try Another Item',
+                    //           style: GoogleFonts.nunito(
+                    //             fontSize: 13.sp,
+                    //             fontWeight: FontWeight.w700,
+                    //             color: TurfitColors.grey700(context),
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+                    // SizedBox(width: 3.w),
                     Expanded(
                       child: Bounceable(
                         onTap: () async {
@@ -394,13 +396,21 @@ class _ResultScreenState extends State<ResultScreen> {
                               ),
                             ),
                           );
-                          Get.snackbar(
-                            '✅ Saved!',
+
+                          // Launch confetti animation
+                          Confetti.launch(
+                            context,
+                            options: const ConfettiOptions(
+                              particleCount: 100,
+                              spread: 70,
+                              y: 0.6,
+                            ),
+                          );
+
+                          AwesomeSnackbarHelper.showSuccess(
+                            context,
+                            'Saved!',
                             'Added to your savings tracker',
-                            backgroundColor: Colors.green.withOpacity(0.1),
-                            colorText: Colors.green,
-                            borderRadius: 12,
-                            margin: EdgeInsets.all(2.w),
                           );
                           Get.offAllNamed('/tabs');
                         },

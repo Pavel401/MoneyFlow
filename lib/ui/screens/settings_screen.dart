@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:growthapp/ui/components/tap_tile.dart';
 import 'package:growthapp/ui/screens/profile_screen.dart';
+import 'package:growthapp/ui/screens/admin_db_viewer_screen.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../data/investments.dart';
@@ -10,6 +12,7 @@ import '../../db/app_db.dart';
 import 'package:drift/drift.dart' as d;
 import 'package:growthapp/ui/theme.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../components/awesome_snackbar_helper.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -56,7 +59,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     if (mounted) {
       setState(() => _syncing = false);
-      Get.snackbar('Sync complete', 'Market data updated');
+      AwesomeSnackbarHelper.showSuccess(
+        context,
+        'Sync complete',
+        'Market data updated',
+      );
     }
   }
 
@@ -72,7 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         dob: d.Value<DateTime?>(_dob),
       ),
     );
-    Get.snackbar('Saved', 'Profile updated');
+    AwesomeSnackbarHelper.showSuccess(context, 'Saved', 'Profile updated');
   }
 
   @override
@@ -164,6 +171,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       onTap: null,
                     ),
+
+                    // Debug-only Admin tile
+                    if (kDebugMode) ...[
+                      SizedBox(height: 2.h),
+                      TapTile(
+                        title: 'Admin DB Viewer',
+                        subtitle:
+                            'View raw database tables and export data (Debug Only)',
+                        leadingIcon: Icons.admin_panel_settings_outlined,
+                        onTap: () => Get.to(() => const AdminDbViewerScreen()),
+                      ),
+                      SizedBox(height: 2.h),
+                      TapTile(
+                        title: 'Show SnackBar ',
+                        subtitle: 'Click to show a sample Awesome Snackbar',
+                        leadingIcon: Icons.snapchat,
+                        onTap: () {
+                          AwesomeSnackbarHelper.showError(
+                            context,
+                            'Hello!',
+                            'This is a sample Awesome Snackbar.',
+                          );
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),

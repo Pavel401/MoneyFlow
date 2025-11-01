@@ -11,6 +11,7 @@ import '../../routes/app_pages.dart';
 import '../icon_utils.dart';
 import '../colors.dart';
 import '../components/kid_friendly_app_bar.dart';
+import '../components/awesome_snackbar_helper.dart';
 
 class EnterPriceScreen extends StatefulWidget {
   const EnterPriceScreen({super.key});
@@ -59,14 +60,10 @@ class _EnterPriceScreenState extends State<EnterPriceScreen> {
       setState(() {
         _isValid = false;
       });
-      Get.snackbar(
-        '💰 Invalid Amount',
+      AwesomeSnackbarHelper.showError(
+        context,
+        'Invalid Amount',
         'Please enter a positive number for your purchase!',
-        backgroundColor: TurfitColors.errorLight.withOpacity(0.1),
-        colorText: TurfitColors.errorLight,
-        borderRadius: 12,
-        margin: EdgeInsets.all(2.w),
-        snackPosition: SnackPosition.TOP,
       );
       return;
     }

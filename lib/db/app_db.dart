@@ -139,7 +139,9 @@ class AppDb extends _$AppDb {
   );
 
   // Savings ops
-  Stream<List<Saving>> watchSavings() => select(savings).watch();
+  Stream<List<Saving>> watchSavings() => (select(
+    savings,
+  )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).watch();
   Future<int> addSaving(SavingsCompanion data) {
     final payload = data.createdAt.present
         ? data
