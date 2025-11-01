@@ -7,6 +7,7 @@ import 'routes/app_pages.dart';
 import 'ui/theme.dart';
 import 'db/app_db.dart';
 import 'data/default_items.dart';
+import 'services/onboarding_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,11 +31,20 @@ class WhatIfApp extends StatefulWidget {
 
 class _WhatIfAppState extends State<WhatIfApp> {
   late final ThemeProvider _themeProvider;
+  String _initialRoute = Routes.onboarding;
 
   @override
   void initState() {
     super.initState();
     _themeProvider = Get.find<ThemeProvider>();
+    _checkOnboardingStatus();
+  }
+
+  void _checkOnboardingStatus() async {
+    final isCompleted = await OnboardingService.isOnboardingCompleted();
+    setState(() {
+      _initialRoute = isCompleted ? Routes.tabs : Routes.onboarding;
+    });
   }
 
   @override
@@ -53,7 +63,7 @@ class _WhatIfAppState extends State<WhatIfApp> {
             //     ? ThemeMode.dark
             //     : ThemeMode.light,
             themeMode: ThemeMode.light,
-            initialRoute: AppPages.initial,
+            initialRoute: _initialRoute,
             getPages: AppPages.pages,
           ),
         );

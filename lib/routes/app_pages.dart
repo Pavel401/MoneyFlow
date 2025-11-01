@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 
-import '../ui/screens/welcome_screen.dart';
+import '../ui/screens/onboarding_screen.dart';
 import '../ui/screens/select_item_screen.dart';
 import '../ui/screens/enter_price_screen.dart';
 import '../ui/screens/select_investment_screen.dart';
@@ -12,7 +12,7 @@ import '../ui/screens/saving_detail_screen.dart';
 import '../ui/screens/admin_db_viewer_screen.dart';
 
 class Routes {
-  static const welcome = '/';
+  static const onboarding = '/onboarding';
   static const selectItem = '/select-item';
   static const addItem = '/add-item';
   static const enterPrice = '/enter-price';
@@ -25,11 +25,11 @@ class Routes {
 }
 
 class AppPages {
-  static const initial = Routes.tabs;
+  static const initial = Routes.onboarding;
 
   static final pages = <GetPage<dynamic>>[
+    GetPage(name: Routes.onboarding, page: () => const OnboardingScreen()),
     GetPage(name: Routes.tabs, page: () => const RootTabs()),
-    GetPage(name: Routes.welcome, page: () => const WelcomeScreen()),
     GetPage(name: Routes.selectItem, page: () => const SelectItemScreen()),
     GetPage(name: Routes.addItem, page: () => const AddItemScreen()),
     GetPage(name: Routes.enterPrice, page: () => const EnterPriceScreen()),

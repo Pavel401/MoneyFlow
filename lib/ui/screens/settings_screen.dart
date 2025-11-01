@@ -8,6 +8,7 @@ import 'package:sizer/sizer.dart';
 
 import '../../data/investments.dart';
 import '../../services/market_service.dart';
+import '../../services/onboarding_service.dart';
 import '../../db/app_db.dart';
 import 'package:drift/drift.dart' as d;
 import 'package:growthapp/ui/theme.dart';
@@ -174,6 +175,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     // Debug-only Admin tile
                     if (kDebugMode) ...[
+                      SizedBox(height: 2.h),
+                      TapTile(
+                        title: 'Reset Onboarding',
+                        subtitle:
+                            'Show onboarding screens again on next launch',
+                        leadingIcon: Icons.refresh_outlined,
+                        onTap: () async {
+                          await OnboardingService.resetOnboarding();
+                          AwesomeSnackbarHelper.showSuccess(
+                            context,
+                            'Reset Complete',
+                            'Onboarding will show on next app restart',
+                          );
+                        },
+                      ),
                       SizedBox(height: 2.h),
                       TapTile(
                         title: 'Admin DB Viewer',
