@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import '../controllers/transaction_controller.dart';
+import '../controllers/account_controller.dart';
 import '../widgets/custom_widgets.dart';
 import '../../domain/entities/transaction_entity.dart';
+import '../../domain/entities/bank_account_entity.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/photo_service.dart';
 import 'dart:io';
@@ -27,14 +29,33 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   TransactionType _selectedType = TransactionType.debit;
   TransactionCategory _selectedCategory = TransactionCategory.other;
   List<String> _selectedPhotos = [];
+  BankAccountEntity? _selectedAccount;
+  BankAccountEntity? _selectedToAccount; // For transfers
 
   bool get isEditing => widget.transaction != null;
 
   @override
   void initState() {
     super.initState();
+    // Load accounts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final accountController = Get.find<AccountController>();
+      accountController.loadAccounts();
+    });
+
     if (isEditing) {
       _populateFields();
+    } else {
+      // Set default account for new transactions
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final accountController = Get.find<AccountController>();
+        final defaultAccount = await accountController.getDefaultAccount();
+        if (defaultAccount != null && mounted) {
+          setState(() {
+            _selectedAccount = defaultAccount;
+          });
+        }
+      });
     }
   }
 
@@ -47,6 +68,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     _selectedType = transaction.type;
     _selectedCategory = transaction.category;
     _selectedPhotos = List.from(transaction.photos);
+
+    // Set selected account if accountId is available
+    if (transaction.accountId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final accountController = Get.find<AccountController>();
+        final accounts = accountController.accounts;
+        final account = accounts.firstWhereOrNull(
+          (acc) => acc.id == transaction.accountId,
+        );
+        if (account != null && mounted) {
+          setState(() {
+            _selectedAccount = account;
+          });
+        }
+      });
+    }
   }
 
   @override
@@ -93,13 +130,215 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     label: 'Transfer',
                     isSelected: _selectedType == TransactionType.transfer,
                     selectedColor: AppTheme.primaryBlue,
-                    onTap: () => setState(
-                      () => _selectedType = TransactionType.transfer,
-                    ),
+                    onTap: () => setState(() {
+                      _selectedType = TransactionType.transfer;
+                      _selectedCategory = TransactionCategory.transfer;
+                      _selectedToAccount = null; // Reset destination account
+                    }),
                   ),
                 ),
               ],
             ),
+
+            SizedBox(height: 3.h),
+
+            // Bank Account Selector
+            Text(
+              'Bank Account',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            SizedBox(height: 2.h),
+            GetBuilder<AccountController>(
+              builder: (accountController) {
+                if (accountController.accounts.isEmpty) {
+                  return Container(
+                    padding: EdgeInsets.all(4.w),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppTheme.greyMedium),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.account_balance,
+                          color: AppTheme.greyDark,
+                          size: 6.w,
+                        ),
+                        SizedBox(height: 2.h),
+                        Text(
+                          'No bank accounts found',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppTheme.greyDark),
+                        ),
+                        SizedBox(height: 1.h),
+                        Text(
+                          'Add a bank account first',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppTheme.greyDark),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppTheme.greyMedium),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _selectedAccount?.id,
+                    decoration: InputDecoration(
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 3.w,
+                        vertical: 3.h,
+                      ),
+                      border: InputBorder.none,
+                      hintText: 'Select a bank account',
+                    ),
+                    isDense: false,
+                    isExpanded: true,
+                    itemHeight: 8.h,
+                    items: accountController.accounts.map((account) {
+                      return DropdownMenuItem<String>(
+                        value: account.id,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 1.h),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                account.displayName,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: 0.5.h),
+                              Text(
+                                '${account.bankName} • ₹${account.balance.toStringAsFixed(2)}',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: AppTheme.greyDark),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (accountId) {
+                      final account = accountController.accounts
+                          .firstWhereOrNull((acc) => acc.id == accountId);
+                      setState(() {
+                        _selectedAccount = account;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Please select a bank account';
+                      }
+                      return null;
+                    },
+                  ),
+                );
+              },
+            ),
+
+            // Transfer destination account (only show for transfers)
+            if (_selectedType == TransactionType.transfer) ...[
+              SizedBox(height: 3.h),
+              Text(
+                'Transfer To Account',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              SizedBox(height: 2.h),
+              GetBuilder<AccountController>(
+                builder: (accountController) {
+                  final availableAccounts = accountController.accounts
+                      .where((acc) => acc.id != _selectedAccount?.id)
+                      .toList();
+
+                  if (availableAccounts.isEmpty) {
+                    return Container(
+                      padding: EdgeInsets.all(4.w),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppTheme.greyMedium),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'No other accounts available for transfer',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.greyDark,
+                        ),
+                      ),
+                    );
+                  }
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppTheme.greyMedium),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _selectedToAccount?.id,
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 3.w,
+                          vertical: 3.h,
+                        ),
+                        border: InputBorder.none,
+                        hintText: 'Select destination account',
+                      ),
+                      isDense: false,
+                      isExpanded: true,
+                      itemHeight: 8.h,
+                      items: availableAccounts.map((account) {
+                        return DropdownMenuItem<String>(
+                          value: account.id,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 1.h),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  account.displayName,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(height: 0.5.h),
+                                Text(
+                                  '${account.bankName} • ₹${account.balance.toStringAsFixed(2)}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: AppTheme.greyDark),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (accountId) {
+                        final account = availableAccounts.firstWhereOrNull(
+                          (acc) => acc.id == accountId,
+                        );
+                        setState(() {
+                          _selectedToAccount = account;
+                        });
+                      },
+                      validator: (value) {
+                        if (_selectedType == TransactionType.transfer &&
+                            value == null) {
+                          return 'Please select destination account';
+                        }
+                        return null;
+                      },
+                    ),
+                  );
+                },
+              ),
+            ],
 
             SizedBox(height: 3.h),
 
@@ -154,28 +393,33 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
             SizedBox(height: 3.h),
 
-            // Category Selector
-            Text('Category', style: Theme.of(context).textTheme.titleMedium),
-            SizedBox(height: 2.h),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 3,
-              crossAxisSpacing: 2.w,
-              mainAxisSpacing: 1.h,
-              childAspectRatio: 2.5,
-              children: TransactionCategory.values
-                  .map(
-                    (category) => CategoryChip(
-                      label: _getCategoryDisplayName(category),
-                      isSelected: _selectedCategory == category,
-                      onTap: () => setState(() => _selectedCategory = category),
-                    ),
-                  )
-                  .toList(),
-            ),
-
-            SizedBox(height: 3.h),
+            // Category Selector (hide for transfers)
+            if (_selectedType != TransactionType.transfer) ...[
+              Text('Category', style: Theme.of(context).textTheme.titleMedium),
+              SizedBox(height: 2.h),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 3,
+                crossAxisSpacing: 2.w,
+                mainAxisSpacing: 1.h,
+                childAspectRatio: 2.5,
+                children: TransactionCategory.values
+                    .where(
+                      (category) => category != TransactionCategory.transfer,
+                    ) // Hide transfer category from manual selection
+                    .map(
+                      (category) => CategoryChip(
+                        label: _getCategoryDisplayName(category),
+                        isSelected: _selectedCategory == category,
+                        onTap: () =>
+                            setState(() => _selectedCategory = category),
+                      ),
+                    )
+                    .toList(),
+              ),
+              SizedBox(height: 3.h),
+            ],
 
             // Location Field
             CustomTextField(
@@ -330,18 +574,37 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           category: _selectedCategory,
           location: location,
           photos: _selectedPhotos,
+          accountId: _selectedAccount?.id,
         );
-        controller.updateTransaction(updatedTransaction);
+        controller.updateTransaction(updatedTransaction, context);
       } else {
-        controller.addManualTransaction(
-          title: _titleController.text,
-          description: _descriptionController.text,
-          amount: amount,
-          type: _selectedType,
-          category: _selectedCategory,
-          location: location,
-          photos: _selectedPhotos,
-        );
+        // Handle transfer transactions differently
+        if (_selectedType == TransactionType.transfer &&
+            _selectedAccount != null &&
+            _selectedToAccount != null) {
+          controller.addTransferTransaction(
+            title: _titleController.text,
+            description: _descriptionController.text,
+            amount: amount,
+            fromAccountId: _selectedAccount!.id,
+            toAccountId: _selectedToAccount!.id,
+            location: location,
+            photos: _selectedPhotos,
+            context: context,
+          );
+        } else {
+          // Regular transaction
+          controller.addManualTransaction(
+            title: _titleController.text,
+            description: _descriptionController.text,
+            amount: amount,
+            type: _selectedType,
+            category: _selectedCategory,
+            location: location,
+            photos: _selectedPhotos,
+            accountId: _selectedAccount?.id,
+          );
+        }
       }
 
       Get.back();
@@ -368,6 +631,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return 'Utilities';
       case TransactionCategory.fuel:
         return 'Fuel';
+      case TransactionCategory.transfer:
+        return 'Transfer';
       case TransactionCategory.other:
         return 'Other';
     }
