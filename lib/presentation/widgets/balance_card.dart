@@ -43,21 +43,21 @@ class BalanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Total Balance',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppTheme.primaryWhite.withOpacity(0.8),
-            ),
-          ),
-          SizedBox(height: 1.h),
-          Text(
-            '₹${_formatAmount(balance)}',
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              color: AppTheme.primaryWhite,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 3.h),
+          // Text(
+          //   'Total Balance',
+          //   style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          //     color: AppTheme.primaryWhite.withOpacity(0.8),
+          //   ),
+          // ),
+          // SizedBox(height: 1.h),
+          // Text(
+          //   '₹${_formatAmount(balance)}',
+          //   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+          //     color: AppTheme.primaryWhite,
+          //     fontWeight: FontWeight.bold,
+          //   ),
+          // ),
+          // SizedBox(height: 3.h),
           Row(
             children: [
               Expanded(
@@ -84,21 +84,21 @@ class BalanceCard extends StatelessWidget {
                   AppTheme.errorRed,
                 ),
               ),
-              Container(
-                width: 1,
-                height: 8.h,
-                color: AppTheme.primaryWhite.withOpacity(0.2),
-                margin: EdgeInsets.symmetric(horizontal: 2.w),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  'Transfer',
-                  totalTransfer,
-                  Icons.swap_horiz,
-                  AppTheme.primaryBlue,
-                ),
-              ),
+              // Container(
+              //   width: 1,
+              //   height: 8.h,
+              //   color: AppTheme.primaryWhite.withOpacity(0.2),
+              //   margin: EdgeInsets.symmetric(horizontal: 2.w),
+              // ),
+              // Expanded(
+              //   child: _buildStatItem(
+              //     context,
+              //     'Transfer',
+              //     totalTransfer,
+              //     Icons.swap_horiz,
+              //     AppTheme.primaryBlue,
+              //   ),
+              // ),
             ],
           ),
         ],
