@@ -4,12 +4,14 @@ import '../../data/repositories/transaction_repository_impl.dart';
 import '../../data/repositories/account_repository_impl.dart';
 import '../../data/datasources/sms_service.dart';
 import '../../data/datasources/gemini_service.dart';
+import '../../data/datasources/budget_service.dart';
 import '../../domain/repositories/transaction_repository.dart';
 import '../../domain/repositories/account_repository.dart';
 import '../../domain/usecases/transaction_usecases.dart';
 import '../../domain/usecases/account_usecases.dart';
 import '../../presentation/controllers/transaction_controller.dart';
 import '../../presentation/controllers/account_controller.dart';
+import '../../presentation/controllers/budget_controller.dart';
 import '../constants/app_constants.dart';
 
 class DependencyInjection {
@@ -21,6 +23,10 @@ class DependencyInjection {
     Get.lazyPut<SmsService>(() => SmsService(), fenix: true);
     Get.lazyPut<GeminiService>(
       () => GeminiService(AppConstants.geminiApiKey),
+      fenix: true,
+    );
+    Get.lazyPut<BudgetService>(
+      () => BudgetService(Get.find<AppDatabase>()),
       fenix: true,
     );
 
@@ -137,6 +143,12 @@ class DependencyInjection {
         Get.find<GetDefaultAccountUseCase>(),
         Get.find<UpdateAccountBalanceUseCase>(),
       ),
+      fenix: true,
+    );
+
+    // Budget Controller
+    Get.lazyPut<BudgetController>(
+      () => BudgetController(Get.find<BudgetService>()),
       fenix: true,
     );
   }

@@ -66,13 +66,28 @@ class BankAccounts extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Transactions, BankAccounts])
-@DriftDatabase(tables: [Transactions, BankAccounts])
+/// Budgets table to store monthly budget information
+class Budgets extends Table {
+  // Primary key
+  TextColumn get id => text()();
+
+  // Budget info
+  IntColumn get year => integer()(); // Budget year
+  IntColumn get month => integer()(); // Budget month (1-12)
+  RealColumn get amount => real()(); // Budget amount
+  DateTimeColumn get createdAt => dateTime()(); // When budget was created
+  DateTimeColumn get updatedAt => dateTime()(); // When budget was last updated
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Transactions, BankAccounts, Budgets])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -107,6 +122,10 @@ class AppDatabase extends _$AppDatabase {
           } catch (e) {
             // Column might already exist, ignore the error
           }
+        }
+        if (from < 5) {
+          // Add Budgets table
+          await m.createTable(budgets);
         }
       },
     );
@@ -208,6 +227,44 @@ class AppDatabase extends _$AppDatabase {
     });
     return true;
   }
+
+  // Budget operations
+  Future<List<Budget>> getAllBudgets() => select(budgets).get();
+
+  Future<Budget?> getBudgetById(String id) =>
+      (select(budgets)..where((b) => b.id.equals(id))).getSingleOrNull();
+
+  Future<Budget?> getBudgetForMonth(int year, int month) =>
+      (select(budgets)
+            ..where((b) => b.year.equals(year))
+            ..where((b) => b.month.equals(month)))
+          .getSingleOrNull();
+
+  Future<List<Budget>> getRecentBudgets() =>
+      (select(budgets)
+            ..orderBy([
+              (b) => OrderingTerm.desc(b.year),
+              (b) => OrderingTerm.desc(b.month),
+            ])
+            ..limit(6))
+          .get();
+
+  Future<int> insertBudget(BudgetsCompanion budget) =>
+      into(budgets).insert(budget);
+
+  Future<bool> updateBudget(BudgetsCompanion budget) =>
+      update(budgets).replace(budget);
+
+  Future<int> deleteBudget(String id) =>
+      (delete(budgets)..where((b) => b.id.equals(id))).go();
+
+  Future<int> deleteBudgetForMonth(int year, int month) =>
+      (delete(budgets)
+            ..where((b) => b.year.equals(year))
+            ..where((b) => b.month.equals(month)))
+          .go();
+
+  Future<int> deleteAllBudgets() => delete(budgets).go();
 
   // Debug helper method to reset database
   Future<void> resetDatabase() async {
