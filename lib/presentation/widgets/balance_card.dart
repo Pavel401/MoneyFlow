@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart';
 import '../../core/theme/app_theme.dart';
+import '../controllers/budget_controller.dart';
 
 class BalanceCard extends StatelessWidget {
   final double totalCredit;
@@ -19,6 +21,8 @@ class BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final BudgetController budgetController = Get.find<BudgetController>();
+
     return Container(
       margin: EdgeInsets.all(4.w),
       padding: EdgeInsets.all(4.w),
@@ -58,48 +62,50 @@ class BalanceCard extends StatelessWidget {
           //   ),
           // ),
           // SizedBox(height: 3.h),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  'Income',
-                  totalCredit,
-                  Icons.arrow_downward,
-                  AppTheme.successGreen,
+          Obx(
+            () => Row(
+              children: [
+                Expanded(
+                  child: _buildStatItem(
+                    context,
+                    'Budget',
+                    budgetController.monthlyBudget,
+                    Icons.account_balance_wallet,
+                    AppTheme.primaryBlue,
+                  ),
                 ),
-              ),
-              Container(
-                width: 1,
-                height: 8.h,
-                color: AppTheme.primaryWhite.withOpacity(0.2),
-                margin: EdgeInsets.symmetric(horizontal: 2.w),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  'Expense',
-                  totalDebit,
-                  Icons.arrow_upward,
-                  AppTheme.errorRed,
+                Container(
+                  width: 1,
+                  height: 8.h,
+                  color: AppTheme.primaryWhite.withOpacity(0.2),
+                  margin: EdgeInsets.symmetric(horizontal: 2.w),
                 ),
-              ),
-              // Container(
-              //   width: 1,
-              //   height: 8.h,
-              //   color: AppTheme.primaryWhite.withOpacity(0.2),
-              //   margin: EdgeInsets.symmetric(horizontal: 2.w),
-              // ),
-              // Expanded(
-              //   child: _buildStatItem(
-              //     context,
-              //     'Transfer',
-              //     totalTransfer,
-              //     Icons.swap_horiz,
-              //     AppTheme.primaryBlue,
-              //   ),
-              // ),
-            ],
+                Expanded(
+                  child: _buildStatItem(
+                    context,
+                    'Expense',
+                    totalDebit,
+                    Icons.arrow_upward,
+                    AppTheme.errorRed,
+                  ),
+                ),
+                // Container(
+                //   width: 1,
+                //   height: 8.h,
+                //   color: AppTheme.primaryWhite.withOpacity(0.2),
+                //   margin: EdgeInsets.symmetric(horizontal: 2.w),
+                // ),
+                // Expanded(
+                //   child: _buildStatItem(
+                //     context,
+                //     'Transfer',
+                //     totalTransfer,
+                //     Icons.swap_horiz,
+                //     AppTheme.primaryBlue,
+                //   ),
+                // ),
+              ],
+            ),
           ),
         ],
       ),
