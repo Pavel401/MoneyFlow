@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:sizer/sizer.dart';
 import 'core/theme/app_theme.dart';
 import 'core/dependencies/dependency_injection.dart';
-import 'presentation/views/home_screen.dart';
+import 'presentation/views/main_navigation.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
         return GetMaterialApp(
           title: 'Money Tracker',
           theme: AppTheme.lightTheme,
-          home: const HomeScreen(),
+          home: MainNavigationScreen(),
           debugShowCheckedModeBanner: false,
         );
       },
