@@ -23,7 +23,8 @@ class Transactions extends Table {
   TextColumn get location => text().nullable()();
   TextColumn get photos => text().nullable()(); // JSON array as string
   TextColumn get smsContent => text().nullable()();
-  TextColumn get accountId => text().nullable()(); // Foreign key to BankAccounts
+  TextColumn get accountId =>
+      text().nullable()(); // Foreign key to BankAccounts
 
   // SMS Parser - Account Info
   TextColumn get accountType =>
@@ -53,33 +54,25 @@ class BankAccounts extends Table {
   // Primary key
   TextColumn get id => text()();
 
-  // Account details
-  TextColumn get accountName => text()();
-  TextColumn get accountNumber => text()();
-  TextColumn get bankName => text()();
-  TextColumn get accountType => text()(); // 'savings', 'current', 'creditCard', 'wallet'
-  RealColumn get balance => real()();
-  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
-
-  // Timestamps
-  DateTimeColumn get createdAt => dateTime()();
-  DateTimeColumn get updatedAt => dateTime()();
-
-  // Optional fields
-  TextColumn get ifscCode => text().nullable()();
-  TextColumn get branchName => text().nullable()();
-  TextColumn get description => text().nullable()();
+  // Bank account info
+  TextColumn get name => text()(); // User-defined name for the account
+  TextColumn get accountNumber => text()(); // Account number
+  TextColumn get bankName => text()(); // Bank name
+  RealColumn get balance => real()(); // Current balance
+  BoolColumn get isDefault =>
+      boolean().withDefault(const Constant(false))(); // Default account flag
 
   @override
   Set<Column> get primaryKey => {id};
 }
 
 @DriftDatabase(tables: [Transactions, BankAccounts])
+@DriftDatabase(tables: [Transactions, BankAccounts])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -106,6 +99,14 @@ class AppDatabase extends _$AppDatabase {
           // Add BankAccounts table and accountId column to transactions
           await m.createTable(bankAccounts);
           await m.addColumn(transactions, transactions.accountId);
+        }
+        if (from < 4) {
+          // Ensure all columns are present - this is a safety migration
+          try {
+            await m.addColumn(transactions, transactions.accountId);
+          } catch (e) {
+            // Column might already exist, ignore the error
+          }
         }
       },
     );
@@ -158,6 +159,7 @@ class AppDatabase extends _$AppDatabase {
     final query = selectOnly(transactions)
       ..addColumns([transactions.category, transactions.amount.sum()])
       ..where(transactions.type.equals('debit'))
+      ..where(transactions.category.isNotValue('transfer'))
       ..groupBy([transactions.category]);
 
     final results = await query.get();
@@ -172,6 +174,49 @@ class AppDatabase extends _$AppDatabase {
     }
 
     return expenses;
+  }
+
+  // Bank Account operations
+  Future<List<BankAccount>> getAllBankAccounts() => select(bankAccounts).get();
+
+  Future<BankAccount?> getBankAccountById(String id) =>
+      (select(bankAccounts)..where((b) => b.id.equals(id))).getSingleOrNull();
+
+  Future<BankAccount?> getDefaultBankAccount() => (select(
+    bankAccounts,
+  )..where((b) => b.isDefault.equals(true))).getSingleOrNull();
+
+  Future<int> insertBankAccount(BankAccountsCompanion account) =>
+      into(bankAccounts).insert(account);
+
+  Future<bool> updateBankAccount(BankAccountsCompanion account) =>
+      update(bankAccounts).replace(account);
+
+  Future<int> deleteBankAccount(String id) =>
+      (delete(bankAccounts)..where((b) => b.id.equals(id))).go();
+
+  Future<bool> setDefaultBankAccount(String id) async {
+    await transaction(() async {
+      // Remove default flag from all accounts
+      await update(
+        bankAccounts,
+      ).write(const BankAccountsCompanion(isDefault: Value(false)));
+      // Set the selected account as default
+      await (update(bankAccounts)..where((b) => b.id.equals(id))).write(
+        const BankAccountsCompanion(isDefault: Value(true)),
+      );
+    });
+    return true;
+  }
+
+  // Debug helper method to reset database
+  Future<void> resetDatabase() async {
+    await close();
+    final dbFolder = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dbFolder.path, 'money_app.db'));
+    if (await file.exists()) {
+      await file.delete();
+    }
   }
 }
 

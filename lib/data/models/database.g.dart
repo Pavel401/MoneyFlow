@@ -107,6 +107,17 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _accountTypeMeta = const VerificationMeta(
     'accountType',
   );
@@ -240,6 +251,7 @@ class $TransactionsTable extends Transactions
     location,
     photos,
     smsContent,
+    accountId,
     accountType,
     accountNumber,
     accountName,
@@ -336,6 +348,12 @@ class $TransactionsTable extends Transactions
       context.handle(
         _smsContentMeta,
         smsContent.isAcceptableOrUnknown(data['sms_content']!, _smsContentMeta),
+      );
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
       );
     }
     if (data.containsKey('account_type')) {
@@ -471,6 +489,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.string,
         data['${effectivePrefix}sms_content'],
       ),
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      ),
       accountType: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}account_type'],
@@ -535,6 +557,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final String? location;
   final String? photos;
   final String? smsContent;
+  final String? accountId;
   final String? accountType;
   final String? accountNumber;
   final String? accountName;
@@ -557,6 +580,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     this.location,
     this.photos,
     this.smsContent,
+    this.accountId,
     this.accountType,
     this.accountNumber,
     this.accountName,
@@ -587,6 +611,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     }
     if (!nullToAbsent || smsContent != null) {
       map['sms_content'] = Variable<String>(smsContent);
+    }
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<String>(accountId);
     }
     if (!nullToAbsent || accountType != null) {
       map['account_type'] = Variable<String>(accountType);
@@ -642,6 +669,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       smsContent: smsContent == null && nullToAbsent
           ? const Value.absent()
           : Value(smsContent),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
       accountType: accountType == null && nullToAbsent
           ? const Value.absent()
           : Value(accountType),
@@ -694,6 +724,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       location: serializer.fromJson<String?>(json['location']),
       photos: serializer.fromJson<String?>(json['photos']),
       smsContent: serializer.fromJson<String?>(json['smsContent']),
+      accountId: serializer.fromJson<String?>(json['accountId']),
       accountType: serializer.fromJson<String?>(json['accountType']),
       accountNumber: serializer.fromJson<String?>(json['accountNumber']),
       accountName: serializer.fromJson<String?>(json['accountName']),
@@ -723,6 +754,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'location': serializer.toJson<String?>(location),
       'photos': serializer.toJson<String?>(photos),
       'smsContent': serializer.toJson<String?>(smsContent),
+      'accountId': serializer.toJson<String?>(accountId),
       'accountType': serializer.toJson<String?>(accountType),
       'accountNumber': serializer.toJson<String?>(accountNumber),
       'accountName': serializer.toJson<String?>(accountName),
@@ -748,6 +780,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     Value<String?> location = const Value.absent(),
     Value<String?> photos = const Value.absent(),
     Value<String?> smsContent = const Value.absent(),
+    Value<String?> accountId = const Value.absent(),
     Value<String?> accountType = const Value.absent(),
     Value<String?> accountNumber = const Value.absent(),
     Value<String?> accountName = const Value.absent(),
@@ -770,6 +803,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     location: location.present ? location.value : this.location,
     photos: photos.present ? photos.value : this.photos,
     smsContent: smsContent.present ? smsContent.value : this.smsContent,
+    accountId: accountId.present ? accountId.value : this.accountId,
     accountType: accountType.present ? accountType.value : this.accountType,
     accountNumber: accountNumber.present
         ? accountNumber.value
@@ -804,6 +838,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       smsContent: data.smsContent.present
           ? data.smsContent.value
           : this.smsContent,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
       accountType: data.accountType.present
           ? data.accountType.value
           : this.accountType,
@@ -847,6 +882,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('location: $location, ')
           ..write('photos: $photos, ')
           ..write('smsContent: $smsContent, ')
+          ..write('accountId: $accountId, ')
           ..write('accountType: $accountType, ')
           ..write('accountNumber: $accountNumber, ')
           ..write('accountName: $accountName, ')
@@ -874,6 +910,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     location,
     photos,
     smsContent,
+    accountId,
     accountType,
     accountNumber,
     accountName,
@@ -900,6 +937,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.location == this.location &&
           other.photos == this.photos &&
           other.smsContent == this.smsContent &&
+          other.accountId == this.accountId &&
           other.accountType == this.accountType &&
           other.accountNumber == this.accountNumber &&
           other.accountName == this.accountName &&
@@ -924,6 +962,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<String?> location;
   final Value<String?> photos;
   final Value<String?> smsContent;
+  final Value<String?> accountId;
   final Value<String?> accountType;
   final Value<String?> accountNumber;
   final Value<String?> accountName;
@@ -947,6 +986,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.location = const Value.absent(),
     this.photos = const Value.absent(),
     this.smsContent = const Value.absent(),
+    this.accountId = const Value.absent(),
     this.accountType = const Value.absent(),
     this.accountNumber = const Value.absent(),
     this.accountName = const Value.absent(),
@@ -971,6 +1011,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.location = const Value.absent(),
     this.photos = const Value.absent(),
     this.smsContent = const Value.absent(),
+    this.accountId = const Value.absent(),
     this.accountType = const Value.absent(),
     this.accountNumber = const Value.absent(),
     this.accountName = const Value.absent(),
@@ -1001,6 +1042,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<String>? location,
     Expression<String>? photos,
     Expression<String>? smsContent,
+    Expression<String>? accountId,
     Expression<String>? accountType,
     Expression<String>? accountNumber,
     Expression<String>? accountName,
@@ -1025,6 +1067,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (location != null) 'location': location,
       if (photos != null) 'photos': photos,
       if (smsContent != null) 'sms_content': smsContent,
+      if (accountId != null) 'account_id': accountId,
       if (accountType != null) 'account_type': accountType,
       if (accountNumber != null) 'account_number': accountNumber,
       if (accountName != null) 'account_name': accountName,
@@ -1051,6 +1094,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<String?>? location,
     Value<String?>? photos,
     Value<String?>? smsContent,
+    Value<String?>? accountId,
     Value<String?>? accountType,
     Value<String?>? accountNumber,
     Value<String?>? accountName,
@@ -1075,6 +1119,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       location: location ?? this.location,
       photos: photos ?? this.photos,
       smsContent: smsContent ?? this.smsContent,
+      accountId: accountId ?? this.accountId,
       accountType: accountType ?? this.accountType,
       accountNumber: accountNumber ?? this.accountNumber,
       accountName: accountName ?? this.accountName,
@@ -1122,6 +1167,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     }
     if (smsContent.present) {
       map['sms_content'] = Variable<String>(smsContent.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
     }
     if (accountType.present) {
       map['account_type'] = Variable<String>(accountType.value);
@@ -1175,6 +1223,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('location: $location, ')
           ..write('photos: $photos, ')
           ..write('smsContent: $smsContent, ')
+          ..write('accountId: $accountId, ')
           ..write('accountType: $accountType, ')
           ..write('accountNumber: $accountNumber, ')
           ..write('accountName: $accountName, ')
@@ -1192,15 +1241,433 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   }
 }
 
+class $BankAccountsTable extends BankAccounts
+    with TableInfo<$BankAccountsTable, BankAccount> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BankAccountsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountNumberMeta = const VerificationMeta(
+    'accountNumber',
+  );
+  @override
+  late final GeneratedColumn<String> accountNumber = GeneratedColumn<String>(
+    'account_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bankNameMeta = const VerificationMeta(
+    'bankName',
+  );
+  @override
+  late final GeneratedColumn<String> bankName = GeneratedColumn<String>(
+    'bank_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _balanceMeta = const VerificationMeta(
+    'balance',
+  );
+  @override
+  late final GeneratedColumn<double> balance = GeneratedColumn<double>(
+    'balance',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDefaultMeta = const VerificationMeta(
+    'isDefault',
+  );
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+    'is_default',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_default" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    accountNumber,
+    bankName,
+    balance,
+    isDefault,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'bank_accounts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BankAccount> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('account_number')) {
+      context.handle(
+        _accountNumberMeta,
+        accountNumber.isAcceptableOrUnknown(
+          data['account_number']!,
+          _accountNumberMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_accountNumberMeta);
+    }
+    if (data.containsKey('bank_name')) {
+      context.handle(
+        _bankNameMeta,
+        bankName.isAcceptableOrUnknown(data['bank_name']!, _bankNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bankNameMeta);
+    }
+    if (data.containsKey('balance')) {
+      context.handle(
+        _balanceMeta,
+        balance.isAcceptableOrUnknown(data['balance']!, _balanceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_balanceMeta);
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(
+        _isDefaultMeta,
+        isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BankAccount map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BankAccount(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      accountNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_number'],
+      )!,
+      bankName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_name'],
+      )!,
+      balance: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}balance'],
+      )!,
+      isDefault: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_default'],
+      )!,
+    );
+  }
+
+  @override
+  $BankAccountsTable createAlias(String alias) {
+    return $BankAccountsTable(attachedDatabase, alias);
+  }
+}
+
+class BankAccount extends DataClass implements Insertable<BankAccount> {
+  final String id;
+  final String name;
+  final String accountNumber;
+  final String bankName;
+  final double balance;
+  final bool isDefault;
+  const BankAccount({
+    required this.id,
+    required this.name,
+    required this.accountNumber,
+    required this.bankName,
+    required this.balance,
+    required this.isDefault,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['account_number'] = Variable<String>(accountNumber);
+    map['bank_name'] = Variable<String>(bankName);
+    map['balance'] = Variable<double>(balance);
+    map['is_default'] = Variable<bool>(isDefault);
+    return map;
+  }
+
+  BankAccountsCompanion toCompanion(bool nullToAbsent) {
+    return BankAccountsCompanion(
+      id: Value(id),
+      name: Value(name),
+      accountNumber: Value(accountNumber),
+      bankName: Value(bankName),
+      balance: Value(balance),
+      isDefault: Value(isDefault),
+    );
+  }
+
+  factory BankAccount.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BankAccount(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      accountNumber: serializer.fromJson<String>(json['accountNumber']),
+      bankName: serializer.fromJson<String>(json['bankName']),
+      balance: serializer.fromJson<double>(json['balance']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'accountNumber': serializer.toJson<String>(accountNumber),
+      'bankName': serializer.toJson<String>(bankName),
+      'balance': serializer.toJson<double>(balance),
+      'isDefault': serializer.toJson<bool>(isDefault),
+    };
+  }
+
+  BankAccount copyWith({
+    String? id,
+    String? name,
+    String? accountNumber,
+    String? bankName,
+    double? balance,
+    bool? isDefault,
+  }) => BankAccount(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    accountNumber: accountNumber ?? this.accountNumber,
+    bankName: bankName ?? this.bankName,
+    balance: balance ?? this.balance,
+    isDefault: isDefault ?? this.isDefault,
+  );
+  BankAccount copyWithCompanion(BankAccountsCompanion data) {
+    return BankAccount(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      accountNumber: data.accountNumber.present
+          ? data.accountNumber.value
+          : this.accountNumber,
+      bankName: data.bankName.present ? data.bankName.value : this.bankName,
+      balance: data.balance.present ? data.balance.value : this.balance,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BankAccount(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('accountNumber: $accountNumber, ')
+          ..write('bankName: $bankName, ')
+          ..write('balance: $balance, ')
+          ..write('isDefault: $isDefault')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, accountNumber, bankName, balance, isDefault);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BankAccount &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.accountNumber == this.accountNumber &&
+          other.bankName == this.bankName &&
+          other.balance == this.balance &&
+          other.isDefault == this.isDefault);
+}
+
+class BankAccountsCompanion extends UpdateCompanion<BankAccount> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> accountNumber;
+  final Value<String> bankName;
+  final Value<double> balance;
+  final Value<bool> isDefault;
+  final Value<int> rowid;
+  const BankAccountsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.accountNumber = const Value.absent(),
+    this.bankName = const Value.absent(),
+    this.balance = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BankAccountsCompanion.insert({
+    required String id,
+    required String name,
+    required String accountNumber,
+    required String bankName,
+    required double balance,
+    this.isDefault = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       accountNumber = Value(accountNumber),
+       bankName = Value(bankName),
+       balance = Value(balance);
+  static Insertable<BankAccount> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? accountNumber,
+    Expression<String>? bankName,
+    Expression<double>? balance,
+    Expression<bool>? isDefault,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (accountNumber != null) 'account_number': accountNumber,
+      if (bankName != null) 'bank_name': bankName,
+      if (balance != null) 'balance': balance,
+      if (isDefault != null) 'is_default': isDefault,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BankAccountsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? accountNumber,
+    Value<String>? bankName,
+    Value<double>? balance,
+    Value<bool>? isDefault,
+    Value<int>? rowid,
+  }) {
+    return BankAccountsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      accountNumber: accountNumber ?? this.accountNumber,
+      bankName: bankName ?? this.bankName,
+      balance: balance ?? this.balance,
+      isDefault: isDefault ?? this.isDefault,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (accountNumber.present) {
+      map['account_number'] = Variable<String>(accountNumber.value);
+    }
+    if (bankName.present) {
+      map['bank_name'] = Variable<String>(bankName.value);
+    }
+    if (balance.present) {
+      map['balance'] = Variable<double>(balance.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BankAccountsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('accountNumber: $accountNumber, ')
+          ..write('bankName: $bankName, ')
+          ..write('balance: $balance, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
+  late final $BankAccountsTable bankAccounts = $BankAccountsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [transactions];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    transactions,
+    bankAccounts,
+  ];
 }
 
 typedef $$TransactionsTableCreateCompanionBuilder =
@@ -1215,6 +1682,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String?> location,
       Value<String?> photos,
       Value<String?> smsContent,
+      Value<String?> accountId,
       Value<String?> accountType,
       Value<String?> accountNumber,
       Value<String?> accountName,
@@ -1240,6 +1708,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String?> location,
       Value<String?> photos,
       Value<String?> smsContent,
+      Value<String?> accountId,
       Value<String?> accountType,
       Value<String?> accountNumber,
       Value<String?> accountName,
@@ -1310,6 +1779,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<String> get smsContent => $composableBuilder(
     column: $table.smsContent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountId => $composableBuilder(
+    column: $table.accountId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1428,6 +1902,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get accountType => $composableBuilder(
     column: $table.accountType,
     builder: (column) => ColumnOrderings(column),
@@ -1527,6 +2006,9 @@ class $$TransactionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get accountId =>
+      $composableBuilder(column: $table.accountId, builder: (column) => column);
+
   GeneratedColumn<String> get accountType => $composableBuilder(
     column: $table.accountType,
     builder: (column) => column,
@@ -1618,6 +2100,7 @@ class $$TransactionsTableTableManager
                 Value<String?> location = const Value.absent(),
                 Value<String?> photos = const Value.absent(),
                 Value<String?> smsContent = const Value.absent(),
+                Value<String?> accountId = const Value.absent(),
                 Value<String?> accountType = const Value.absent(),
                 Value<String?> accountNumber = const Value.absent(),
                 Value<String?> accountName = const Value.absent(),
@@ -1641,6 +2124,7 @@ class $$TransactionsTableTableManager
                 location: location,
                 photos: photos,
                 smsContent: smsContent,
+                accountId: accountId,
                 accountType: accountType,
                 accountNumber: accountNumber,
                 accountName: accountName,
@@ -1666,6 +2150,7 @@ class $$TransactionsTableTableManager
                 Value<String?> location = const Value.absent(),
                 Value<String?> photos = const Value.absent(),
                 Value<String?> smsContent = const Value.absent(),
+                Value<String?> accountId = const Value.absent(),
                 Value<String?> accountType = const Value.absent(),
                 Value<String?> accountNumber = const Value.absent(),
                 Value<String?> accountName = const Value.absent(),
@@ -1689,6 +2174,7 @@ class $$TransactionsTableTableManager
                 location: location,
                 photos: photos,
                 smsContent: smsContent,
+                accountId: accountId,
                 accountType: accountType,
                 accountNumber: accountNumber,
                 accountName: accountName,
@@ -1727,10 +2213,233 @@ typedef $$TransactionsTableProcessedTableManager =
       Transaction,
       PrefetchHooks Function()
     >;
+typedef $$BankAccountsTableCreateCompanionBuilder =
+    BankAccountsCompanion Function({
+      required String id,
+      required String name,
+      required String accountNumber,
+      required String bankName,
+      required double balance,
+      Value<bool> isDefault,
+      Value<int> rowid,
+    });
+typedef $$BankAccountsTableUpdateCompanionBuilder =
+    BankAccountsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> accountNumber,
+      Value<String> bankName,
+      Value<double> balance,
+      Value<bool> isDefault,
+      Value<int> rowid,
+    });
+
+class $$BankAccountsTableFilterComposer
+    extends Composer<_$AppDatabase, $BankAccountsTable> {
+  $$BankAccountsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountNumber => $composableBuilder(
+    column: $table.accountNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bankName => $composableBuilder(
+    column: $table.bankName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get balance => $composableBuilder(
+    column: $table.balance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BankAccountsTableOrderingComposer
+    extends Composer<_$AppDatabase, $BankAccountsTable> {
+  $$BankAccountsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountNumber => $composableBuilder(
+    column: $table.accountNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bankName => $composableBuilder(
+    column: $table.bankName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get balance => $composableBuilder(
+    column: $table.balance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BankAccountsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BankAccountsTable> {
+  $$BankAccountsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get accountNumber => $composableBuilder(
+    column: $table.accountNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bankName =>
+      $composableBuilder(column: $table.bankName, builder: (column) => column);
+
+  GeneratedColumn<double> get balance =>
+      $composableBuilder(column: $table.balance, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+}
+
+class $$BankAccountsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BankAccountsTable,
+          BankAccount,
+          $$BankAccountsTableFilterComposer,
+          $$BankAccountsTableOrderingComposer,
+          $$BankAccountsTableAnnotationComposer,
+          $$BankAccountsTableCreateCompanionBuilder,
+          $$BankAccountsTableUpdateCompanionBuilder,
+          (
+            BankAccount,
+            BaseReferences<_$AppDatabase, $BankAccountsTable, BankAccount>,
+          ),
+          BankAccount,
+          PrefetchHooks Function()
+        > {
+  $$BankAccountsTableTableManager(_$AppDatabase db, $BankAccountsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BankAccountsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BankAccountsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BankAccountsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> accountNumber = const Value.absent(),
+                Value<String> bankName = const Value.absent(),
+                Value<double> balance = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BankAccountsCompanion(
+                id: id,
+                name: name,
+                accountNumber: accountNumber,
+                bankName: bankName,
+                balance: balance,
+                isDefault: isDefault,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String accountNumber,
+                required String bankName,
+                required double balance,
+                Value<bool> isDefault = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BankAccountsCompanion.insert(
+                id: id,
+                name: name,
+                accountNumber: accountNumber,
+                bankName: bankName,
+                balance: balance,
+                isDefault: isDefault,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BankAccountsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BankAccountsTable,
+      BankAccount,
+      $$BankAccountsTableFilterComposer,
+      $$BankAccountsTableOrderingComposer,
+      $$BankAccountsTableAnnotationComposer,
+      $$BankAccountsTableCreateCompanionBuilder,
+      $$BankAccountsTableUpdateCompanionBuilder,
+      (
+        BankAccount,
+        BaseReferences<_$AppDatabase, $BankAccountsTable, BankAccount>,
+      ),
+      BankAccount,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$TransactionsTableTableManager get transactions =>
       $$TransactionsTableTableManager(_db, _db.transactions);
+  $$BankAccountsTableTableManager get bankAccounts =>
+      $$BankAccountsTableTableManager(_db, _db.bankAccounts);
 }
