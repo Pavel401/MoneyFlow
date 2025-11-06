@@ -303,6 +303,8 @@ class TransactionDetailScreen extends StatelessWidget {
         return 'Utilities';
       case TransactionCategory.fuel:
         return 'Fuel';
+      case TransactionCategory.transfer:
+        return 'Transfer';
       case TransactionCategory.other:
         return 'Other';
     }
