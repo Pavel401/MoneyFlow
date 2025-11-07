@@ -199,6 +199,65 @@ class SettingsScreen extends StatelessWidget {
                 padding: EdgeInsets.all(4.w),
                 child: Column(
                   children: [
+                    // Export Data Section
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(3.w),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryBlue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.download,
+                            color: AppTheme.primaryBlue,
+                            size: 6.w,
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Export All Data',
+                                style: TextStyle(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.primaryBlack,
+                                ),
+                              ),
+                              SizedBox(height: 0.5.h),
+                              Text(
+                                'Export all transactions, accounts, and budgets to JSON file',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: AppTheme.greyDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 3.h),
+                    Obx(
+                      () => CustomButton(
+                        text: 'Export Data',
+                        icon: Icons.file_download,
+                        onPressed: controller.isLoading
+                            ? null
+                            : () => _showExportDialog(context, controller),
+                        isLoading: controller.isLoading,
+                        backgroundColor: AppTheme.primaryBlue,
+                      ),
+                    ),
+
+                    SizedBox(height: 4.h),
+                    Divider(color: AppTheme.greyMedium),
+                    SizedBox(height: 4.h),
+
+                    // Reset Data Section
                     Row(
                       children: [
                         Container(
@@ -367,6 +426,225 @@ class SettingsScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (context) => const BudgetManagementBottomSheet(),
     );
+  }
+
+  void _showExportDialog(
+    BuildContext context,
+    TransactionController controller,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          height: 50.h,
+          decoration: const BoxDecoration(
+            color: AppTheme.primaryWhite,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                margin: EdgeInsets.only(top: 1.h, bottom: 2.h),
+                width: 12.w,
+                height: 0.5.h,
+                decoration: BoxDecoration(
+                  color: AppTheme.greyMedium,
+                  borderRadius: BorderRadius.circular(2.5),
+                ),
+              ),
+
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                  child: Column(
+                    children: [
+                      // Header
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.download,
+                            color: AppTheme.primaryBlue,
+                            size: 6.w,
+                          ),
+                          SizedBox(width: 3.w),
+                          Expanded(
+                            child: Text(
+                              'Export All Data',
+                              style: TextStyle(
+                                fontSize: 20.sp,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primaryBlack,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.close),
+                            iconSize: 6.w,
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 3.h),
+
+                      // Content
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'This will export all your data to a JSON file that you can share or back up.',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: AppTheme.greyDark,
+                                ),
+                              ),
+                              SizedBox(height: 3.h),
+
+                              // Export summary
+                              Container(
+                                padding: EdgeInsets.all(4.w),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppTheme.primaryBlue.withOpacity(
+                                      0.3,
+                                    ),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Export Summary',
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.primaryBlack,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2.h),
+                                    Text(
+                                      controller.getExportSummary(),
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: AppTheme.greyDark,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Action buttons
+                      SizedBox(height: 3.h),
+                      Column(
+                        children: [
+                          CustomButton(
+                            text: 'Export & Share',
+                            icon: Icons.share,
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _performExport(context, controller);
+                            },
+                            backgroundColor: AppTheme.primaryBlue,
+                            height: 6.h,
+                          ),
+                          SizedBox(height: 2.h),
+                          CustomButton(
+                            text: 'Cancel',
+                            onPressed: () => Navigator.of(context).pop(),
+                            isOutlined: true,
+                            height: 6.h,
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 3.h),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _performExport(
+    BuildContext context,
+    TransactionController controller,
+  ) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            content: Padding(
+              padding: EdgeInsets.all(2.w),
+              child: Row(
+                children: [
+                  const CircularProgressIndicator(),
+                  SizedBox(width: 4.w),
+                  const Text('Exporting data...'),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
+      // Perform the export
+      final filePath = await controller.exportAllData();
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      // Share the exported file
+      await controller.shareExportedData(filePath);
+
+      // Show success message
+      Get.snackbar(
+        'Success',
+        'Data exported and shared successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppTheme.successGreen,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+        margin: EdgeInsets.all(4.w),
+        borderRadius: 12,
+      );
+    } catch (e) {
+      // Close loading dialog if still open
+      Navigator.of(context).pop();
+
+      // Show error message
+      Get.snackbar(
+        'Error',
+        'Failed to export data: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+        margin: EdgeInsets.all(4.w),
+        borderRadius: 12,
+      );
+    }
   }
 
   String _getMonthName(int month) {
