@@ -6,6 +6,7 @@ import '../../domain/entities/transaction_entity.dart';
 import '../widgets/custom_widgets.dart';
 import '../../core/theme/app_theme.dart';
 import 'add_transaction_screen.dart';
+import '../controllers/transaction_controller.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
   final TransactionEntity transaction;
@@ -20,8 +21,12 @@ class TransactionDetailScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () =>
-                Get.to(() => AddTransactionScreen(transaction: transaction)),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) =>
+                    AddTransactionScreen(transaction: transaction),
+              ),
+            ),
           ),
         ],
       ),
@@ -176,8 +181,11 @@ class TransactionDetailScreen extends StatelessWidget {
                     text: 'Edit',
                     icon: Icons.edit,
                     isOutlined: true,
-                    onPressed: () => Get.to(
-                      () => AddTransactionScreen(transaction: transaction),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            AddTransactionScreen(transaction: transaction),
+                      ),
                     ),
                   ),
                 ),
@@ -256,22 +264,83 @@ class TransactionDetailScreen extends StatelessWidget {
   void _showDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Transaction'),
+      barrierDismissible: false, // Prevent dismissing by tapping outside
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: AppTheme.errorRed,
+              size: 6.w,
+            ),
+            SizedBox(width: 2.w),
+            const Text('Delete Transaction'),
+          ],
+        ),
         content: Text(
-          'Are you sure you want to delete "${transaction.title}"?',
+          'Are you sure you want to delete "${transaction.title}"?\n\nThis action cannot be undone.',
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
-          ElevatedButton(
+          TextButton(
             onPressed: () {
-              // Get controller and delete transaction
-              Get.back(); // Close dialog
-              Get.back(); // Go back to previous screen
-              // Note: Add delete functionality here if needed
+              Navigator.of(
+                dialogContext,
+              ).pop(); // Close dialog using Material navigation
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorRed),
-            child: const Text('Delete'),
+            child: Text('Cancel', style: TextStyle(color: AppTheme.greyDark)),
+          ),
+          StatefulBuilder(
+            builder: (context, setState) {
+              return GetBuilder<TransactionController>(
+                builder: (controller) => ElevatedButton(
+                  onPressed: controller.isLoading
+                      ? null
+                      : () async {
+                          try {
+                            // Delete transaction
+                            await controller.deleteTransaction(
+                              transaction.id,
+                              context,
+                            );
+
+                            // Close dialog using Material navigation
+                            if (Navigator.of(dialogContext).canPop()) {
+                              Navigator.of(dialogContext).pop();
+                            }
+
+                            // Go back to previous screen using Material navigation
+                            if (Navigator.of(context).canPop()) {
+                              Navigator.of(context).pop();
+                            }
+                          } catch (e) {
+                            // Handle any errors (controller already shows snackbar)
+                            if (Navigator.of(dialogContext).canPop()) {
+                              Navigator.of(dialogContext).pop();
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.errorRed,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: controller.isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Delete'),
+                ),
+              );
+            },
           ),
         ],
       ),
