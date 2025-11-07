@@ -10,6 +10,10 @@ import '../../data/datasources/sms_service.dart';
 import '../../data/datasources/gemini_service.dart';
 import '../../data/models/enums.dart' as app_enums;
 import '../../core/utils/ui_helpers.dart';
+import '../../core/services/export_service.dart';
+import '../../data/models/database.dart';
+import '../controllers/account_controller.dart';
+import '../controllers/budget_controller.dart';
 
 class TransactionController extends GetxController {
   final AddTransactionUseCase _addTransactionUseCase;
@@ -796,6 +800,84 @@ class TransactionController extends GetxController {
         transaction.accountId!,
         balanceChange,
       );
+    }
+  }
+
+  /// Export all app data to JSON format
+  Future<String> exportAllData() async {
+    try {
+      _isLoading.value = true;
+      _errorMessage.value = '';
+
+      // Get all transactions (already loaded)
+      final allTransactions = _transactions.toList();
+
+      // Get all accounts
+      final accountController = Get.find<AccountController>();
+      final allAccounts = accountController.accounts.toList();
+
+      // Get all budgets
+      final budgetController = Get.find<BudgetController>();
+      // Convert budget maps to Budget objects for the export
+      final database = Get.find<AppDatabase>();
+      final allBudgets = await database.getAllBudgets();
+
+      // Generate and return the export file path
+      final filePath = await ExportService.exportAllDataToJson(
+        transactions: allTransactions,
+        accounts: allAccounts,
+        budgets: allBudgets,
+      );
+
+      return filePath;
+    } catch (e) {
+      _errorMessage.value = 'Failed to export data: $e';
+      rethrow;
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  /// Share exported data file
+  Future<void> shareExportedData(String filePath) async {
+    try {
+      await ExportService.shareExportedFile(filePath);
+    } catch (e) {
+      _errorMessage.value = 'Failed to share export: $e';
+      rethrow;
+    }
+  }
+
+  /// Get export summary
+  String getExportSummary() {
+    try {
+      final accountController = Get.find<AccountController>();
+      final budgetController = Get.find<BudgetController>();
+
+      // Create mock budget list for summary
+      final budgetMaps = budgetController.monthlyBudgets;
+      final mockBudgets = budgetMaps
+          .map(
+            (map) => Budget(
+              id: map['id'] ?? '',
+              year: map['year'] ?? 0,
+              month: map['month'] ?? 0,
+              amount: (map['amount'] ?? 0.0).toDouble(),
+              createdAt:
+                  DateTime.tryParse(map['createdAt'] ?? '') ?? DateTime.now(),
+              updatedAt:
+                  DateTime.tryParse(map['updatedAt'] ?? '') ?? DateTime.now(),
+            ),
+          )
+          .toList();
+
+      return ExportService.getExportSummary(
+        transactions: _transactions.toList(),
+        accounts: accountController.accounts.toList(),
+        budgets: mockBudgets,
+      );
+    } catch (e) {
+      return 'Failed to generate export summary: $e';
     }
   }
 
