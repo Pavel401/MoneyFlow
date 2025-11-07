@@ -158,8 +158,11 @@ class HomeScreen extends StatelessWidget {
                       onEdit: () => Get.to(
                         () => AddTransactionScreen(transaction: transaction),
                       ),
+                      // TransactionCard already shows a confirmation dialog
+                      // when swiping to delete. So perform deletion directly
+                      // here to avoid double confirmation.
                       onDelete: () =>
-                          _showDeleteDialog(context, controller, transaction),
+                          controller.deleteTransaction(transaction.id, context),
                     );
                   }, childCount: controller.filteredTransactions.length),
                 ),
