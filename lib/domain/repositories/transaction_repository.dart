@@ -1,4 +1,4 @@
-import '../../domain/entities/transaction_entity.dart';
+import 'package:moneyapp/domain/entities/transaction_entity.dart';
 
 abstract class TransactionRepository {
   Future<List<TransactionEntity>> getAllTransactions();
