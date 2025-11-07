@@ -164,6 +164,28 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteAllTransactions() => delete(transactions).go();
 
+  // Check if SMS transaction already exists to prevent duplicates
+  Future<bool> smsTransactionExists(String smsContent) async {
+    final result = await (select(
+      transactions,
+    )..where((t) => t.smsContent.equals(smsContent))).getSingleOrNull();
+    return result != null;
+  }
+
+  // Get existing SMS transactions for duplicate checking
+  Future<List<String>> getExistingSmsContents() async {
+    final query = selectOnly(transactions)
+      ..addColumns([transactions.smsContent])
+      ..where(transactions.smsContent.isNotNull());
+
+    final results = await query.get();
+    return results
+        .map((row) => row.read(transactions.smsContent))
+        .where((content) => content != null)
+        .cast<String>()
+        .toList();
+  }
+
   // Statistics
   Future<double> getTotalAmountByType(String type) async {
     final query = selectOnly(transactions)

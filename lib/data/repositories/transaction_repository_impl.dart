@@ -200,4 +200,14 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Future<void> resetAllData() async {
     await _database.deleteAllTransactions();
   }
+
+  /// Check if a transaction with this SMS content already exists
+  Future<bool> smsTransactionExists(String smsContent) async {
+    return await _database.smsTransactionExists(smsContent);
+  }
+
+  /// Get all existing SMS contents for duplicate checking
+  Future<List<String>> getExistingSmsContents() async {
+    return await _database.getExistingSmsContents();
+  }
 }

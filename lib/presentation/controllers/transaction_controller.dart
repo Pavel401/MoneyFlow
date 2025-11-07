@@ -391,10 +391,21 @@ class TransactionController extends GetxController {
     DateTime? startDate,
     DateTime? endDate,
     BuildContext? context,
+    bool fetchOnlyNew = true,
   }) async {
     try {
       _isProcessingSms.value = true;
       _errorMessage.value = '';
+
+      // Get existing SMS contents if fetchOnlyNew is true
+      Set<String> existingSmsContents = {};
+      if (fetchOnlyNew) {
+        final repository = Get.find<TransactionRepository>();
+        if (repository is TransactionRepositoryImpl) {
+          final existing = await repository.getExistingSmsContents();
+          existingSmsContents = existing.toSet();
+        }
+      }
 
       // Get banking SMS messages with custom date range
       final smsMessages = await _smsService.getBankingMessages(
@@ -415,12 +426,21 @@ class TransactionController extends GetxController {
       }
 
       int processedCount = 0;
+      int skippedCount = 0;
 
       for (final smsMessage in smsMessages) {
         try {
+          final smsContent = smsMessage.body ?? '';
+
+          // Skip if this SMS was already processed and we're only fetching new ones
+          if (fetchOnlyNew && existingSmsContents.contains(smsContent)) {
+            skippedCount++;
+            continue;
+          }
+
           // Parse with transaction_sms_parser
           final transactionInfo = _smsService.parseTransactionFromSms(
-            smsMessage.body ?? '',
+            smsContent,
           );
 
           if (transactionInfo != null) {
@@ -438,10 +458,7 @@ class TransactionController extends GetxController {
             }
 
             // Check if this is a transfer transaction
-            if (_isTransferTransaction(
-              transaction.merchant,
-              smsMessage.body ?? '',
-            )) {
+            if (_isTransferTransaction(transaction.merchant, smsContent)) {
               type = TransactionType.transfer;
             }
 
@@ -454,6 +471,11 @@ class TransactionController extends GetxController {
                 '',
               );
               amount = double.tryParse(cleanAmount) ?? 0.0;
+            }
+
+            // Skip transactions with zero amount
+            if (amount == 0.0) {
+              continue;
             }
 
             // Create title from merchant or transaction type
@@ -488,16 +510,12 @@ class TransactionController extends GetxController {
               description: description,
               amount: amount,
               category: category,
-              smsContent: smsMessage.body,
+              smsContent: smsContent,
             );
 
             // Use the repository directly to save transaction with SMS data
             final repository = Get.find<TransactionRepository>();
             if (repository is TransactionRepositoryImpl) {
-              if (amount == 0.0) {
-                // Skip transactions with zero amount
-                continue;
-              }
               await repository.addTransactionWithSmsData(
                 transactionEntity,
                 accountType: account.type?.name,
@@ -525,6 +543,11 @@ class TransactionController extends GetxController {
       await loadTransactions();
       await loadStatistics();
 
+      String message = 'Processed $processedCount transactions';
+      if (fetchOnlyNew && skippedCount > 0) {
+        message += ' (skipped $skippedCount duplicates)';
+      }
+
       final dateRange = startDate != null && endDate != null
           ? 'from ${startDate.day}/${startDate.month}/${startDate.year} to ${endDate.day}/${endDate.month}/${endDate.year}'
           : 'from last 30 days';
@@ -532,8 +555,8 @@ class TransactionController extends GetxController {
       if (context != null) {
         UIHelpers.showSnackbar(
           context,
-          message: 'Processed $processedCount transactions from SMS $dateRange',
-          type: SnackbarType.success,
+          message: '$message $dateRange',
+          type: processedCount > 0 ? SnackbarType.success : SnackbarType.info,
         );
       }
     } catch (e) {
@@ -817,7 +840,6 @@ class TransactionController extends GetxController {
       final allAccounts = accountController.accounts.toList();
 
       // Get all budgets
-      final budgetController = Get.find<BudgetController>();
       // Convert budget maps to Budget objects for the export
       final database = Get.find<AppDatabase>();
       final allBudgets = await database.getAllBudgets();

@@ -5,9 +5,9 @@ import '../controllers/transaction_controller.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/transaction_card.dart';
 import '../widgets/custom_widgets.dart';
-import '../widgets/date_range_picker_dialog.dart' as custom;
 import '../widgets/swipe_instructions_dialog.dart';
 import '../widgets/search_bottom_sheet.dart';
+import '../widgets/sms_scan_bottom_sheet.dart';
 import '../../domain/entities/transaction_entity.dart';
 import '../../core/theme/app_theme.dart';
 import 'add_transaction_screen.dart';
@@ -74,7 +74,7 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.sms,
                           onPressed: controller.isProcessingSms
                               ? null
-                              : () => _showDateRangePickerForSms(
+                              : () => _showSmsScanBottomSheet(
                                   context,
                                   controller,
                                 ),
@@ -123,12 +123,12 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      TextButton(
-                        onPressed: () {
-                          // Navigate to all transactions
-                        },
-                        child: const Text('View All'),
-                      ),
+                      // TextButton(
+                      //   onPressed: () {
+                      //     // Navigate to all transactions
+                      //   },
+                      //   child: const Text('View All'),
+                      // ),
                     ],
                   ),
                 ),
@@ -344,46 +344,15 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  void _showDeleteDialog(
-    BuildContext context,
-    TransactionController controller,
-    TransactionEntity transaction,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Transaction'),
-        content: Text(
-          'Are you sure you want to delete "${transaction.title}"?',
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              controller.deleteTransaction(transaction.id);
-              Get.back();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorRed),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDateRangePickerForSms(
+  void _showSmsScanBottomSheet(
     BuildContext context,
     TransactionController controller,
   ) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => custom.DateRangePickerDialog(
-        initialStartDate: DateTime.now().subtract(const Duration(days: 30)),
-        initialEndDate: DateTime.now(),
-        onDateRangeSelected: (startDate, endDate) {
-          controller.processSmsMessages(startDate: startDate, endDate: endDate);
-        },
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const SmsScanBottomSheet(),
     );
   }
 
