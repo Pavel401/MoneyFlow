@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../core/theme/app_theme.dart';
 import 'home_screen.dart';
 import 'accounts_screen.dart';
+import 'chat_screen.dart';
 
 class MainNavigationController extends GetxController {
   var selectedIndex = 0.obs;
@@ -19,7 +20,11 @@ class MainNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(MainNavigationController());
 
-    final List<Widget> screens = [const HomeScreen(), const AccountsScreen()];
+    final List<Widget> screens = [
+      const HomeScreen(),
+      const AccountsScreen(),
+      const ChatScreen(),
+    ];
 
     return Scaffold(
       body: Obx(
@@ -42,6 +47,10 @@ class MainNavigation extends StatelessWidget {
             BottomNavigationBarItem(
               icon: Icon(Icons.account_balance_wallet),
               label: 'Accounts',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline),
+              label: 'Chat',
             ),
           ],
         ),
