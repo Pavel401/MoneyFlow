@@ -14,6 +14,7 @@ import '../../core/services/export_service.dart';
 import '../../data/models/database.dart';
 import '../controllers/account_controller.dart';
 import '../controllers/budget_controller.dart';
+import '../widgets/sms_processing_dialog.dart';
 
 class TransactionController extends GetxController {
   final AddTransactionUseCase _addTransactionUseCase;
@@ -413,6 +414,18 @@ class TransactionController extends GetxController {
     BuildContext? context,
     bool fetchOnlyNew = true,
   }) async {
+    // Show processing dialog
+    if (context != null && context.mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const SmsProcessingDialog(
+          totalMessages: 0,
+          processedMessages: 0,
+        ),
+      );
+    }
+
     try {
       _isProcessingSms.value = true;
       _errorMessage.value = '';
@@ -434,11 +447,16 @@ class TransactionController extends GetxController {
         endDate: endDate,
       );
 
+      // Close processing dialog
+      if (context != null && context.mounted) {
+        Navigator.of(context).pop();
+      }
+
       if (smsMessages.isEmpty) {
         if (context != null) {
           UIHelpers.showSnackbar(
             context,
-            message: 'No banking SMS messages found',
+            message: 'No banking SMS messages found in the selected date range',
             type: SnackbarType.info,
           );
         }
@@ -563,7 +581,7 @@ class TransactionController extends GetxController {
       await loadTransactions();
       await loadStatistics();
 
-      String message = 'Processed $processedCount transactions';
+      String message = '✓ Processed $processedCount transactions';
       if (fetchOnlyNew && skippedCount > 0) {
         message += ' (skipped $skippedCount duplicates)';
       }
@@ -575,16 +593,22 @@ class TransactionController extends GetxController {
       if (context != null) {
         UIHelpers.showSnackbar(
           context,
-          message: '$message $dateRange',
+          message: '$message $dateRange. All data processed securely on your device.',
           type: processedCount > 0 ? SnackbarType.success : SnackbarType.info,
+          duration: const Duration(seconds: 5),
         );
       }
     } catch (e) {
+      // Close processing dialog if still open
+      if (context != null && context.mounted) {
+        Navigator.of(context).pop();
+      }
+      
       _errorMessage.value = 'Failed to process SMS messages: $e';
       if (context != null) {
         UIHelpers.showSnackbar(
           context,
-          message: 'Failed to process SMS messages',
+          message: 'Failed to process SMS messages. Please try again.',
           type: SnackbarType.error,
         );
       }
