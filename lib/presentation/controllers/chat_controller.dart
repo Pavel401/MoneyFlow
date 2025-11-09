@@ -11,7 +11,7 @@ import 'account_controller.dart';
 import 'budget_controller.dart';
 
 class ChatMessage {
-  final String role; // 'user' or 'assistant'
+  final String role;
   final String content;
   final DateTime timestamp;
 
@@ -37,19 +37,16 @@ class ChatMessage {
 }
 
 class ChatController extends GetxController {
-  final TextEditingController messageController = TextEditingController();
-  final ScrollController scrollController = ScrollController();
+  final messageController = TextEditingController();
+  final scrollController = ScrollController();
+  final messages = <ChatMessage>[].obs;
+  final isLoading = false.obs;
+  final isSending = false.obs;
+  final errorMessage = ''.obs;
+  final historyLimit = 8.obs;
 
-  final RxList<ChatMessage> messages = <ChatMessage>[].obs;
-  final RxBool isLoading = false.obs;
-  final RxBool isSending = false.obs;
-  final RxString errorMessage = ''.obs;
-
-  // Configurable history limit for API calls
-  final RxInt historyLimit = 8.obs;
-
-  static const String _chatHistoryKey = 'chat_history';
-  static const String _historyLimitKey = 'chat_history_limit';
+  static const _chatHistoryKey = 'chat_history';
+  static const _historyLimitKey = 'chat_history_limit';
 
   @override
   void onInit() {
@@ -65,7 +62,6 @@ class ChatController extends GetxController {
     super.onClose();
   }
 
-  /// Load chat history from local storage
   Future<void> _loadChatHistory() async {
     try {
       isLoading.value = true;
@@ -73,104 +69,77 @@ class ChatController extends GetxController {
       final historyJson = prefs.getString(_chatHistoryKey);
 
       if (historyJson != null && historyJson.isNotEmpty) {
-        final List<dynamic> decoded = json.decode(historyJson);
-        messages.value = decoded
-            .map((msg) => ChatMessage.fromJson(msg))
-            .toList();
+        final decoded = json.decode(historyJson) as List;
+        messages.value = decoded.map((m) => ChatMessage.fromJson(m)).toList();
       }
     } catch (e) {
-      print('Error loading chat history: $e');
+      print('Error loading chat: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Load history limit from local storage
   Future<void> _loadHistoryLimit() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final savedLimit = prefs.getInt(_historyLimitKey);
-      if (savedLimit != null && savedLimit > 0) {
-        historyLimit.value = savedLimit;
-      }
+      historyLimit.value = prefs.getInt(_historyLimitKey) ?? 8;
     } catch (e) {
-      print('Error loading history limit: $e');
+      print('Error loading limit: $e');
     }
   }
 
-  /// Save history limit to local storage
-  Future<void> _saveHistoryLimit() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_historyLimitKey, historyLimit.value);
-    } catch (e) {
-      print('Error saving history limit: $e');
-    }
-  }
-
-  /// Update history limit
   Future<void> updateHistoryLimit(int newLimit) async {
     if (newLimit < 1 || newLimit > 50) {
-      errorMessage.value = 'History limit must be between 1 and 50';
+      errorMessage.value = 'Limit must be between 1 and 50';
       return;
     }
     historyLimit.value = newLimit;
-    await _saveHistoryLimit();
-  }
-
-  /// Save chat history to local storage
-  Future<void> _saveChatHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final historyJson = json.encode(
-        messages.map((msg) => msg.toJson()).toList(),
-      );
-      await prefs.setString(_chatHistoryKey, historyJson);
+      await prefs.setInt(_historyLimitKey, newLimit);
     } catch (e) {
-      print('Error saving chat history: $e');
+      print('Error saving limit: $e');
     }
   }
 
-  /// Get finance info for the last 30 days
+  Future<void> _saveChatHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final historyJson = json.encode(messages.map((m) => m.toJson()).toList());
+      await prefs.setString(_chatHistoryKey, historyJson);
+    } catch (e) {
+      print('Error saving chat: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> _getFinanceInfo() async {
     try {
-      final transactionController = Get.find<TransactionController>();
-
-      // Get transactions from the last 30 days
       final now = DateTime.now();
       final thirtyDaysAgo = now.subtract(const Duration(days: 30));
 
-      final recentTransactions = transactionController.transactions
+      final transactions = Get.find<TransactionController>().transactions
           .where((t) => t.date.isAfter(thirtyDaysAgo))
           .toList();
 
-      // Get all accounts and budgets using the correct controllers
-      final accountController = Get.find<AccountController>();
-      final budgetController = Get.find<BudgetController>();
+      final accounts = Get.find<AccountController>().accounts.toList();
 
-      final accounts = accountController.accounts.toList();
-      final budgetMaps = budgetController.monthlyBudgets;
-
-      // Convert budget maps to Budget objects
-      final budgets = budgetMaps.map((budgetMap) {
+      final budgets = Get.find<BudgetController>().monthlyBudgets.map((m) {
         return Budget(
           id: const Uuid().v4(),
-          year: budgetMap['year'] as int? ?? now.year,
-          month: budgetMap['month'] as int? ?? now.month,
-          amount: (budgetMap['amount'] as num?)?.toDouble() ?? 0.0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
+          year: m['year'] as int? ?? now.year,
+          month: m['month'] as int? ?? now.month,
+          amount: (m['amount'] as num?)?.toDouble() ?? 0.0,
+          createdAt: now,
+          updatedAt: now,
         );
       }).toList();
 
-      // Generate export data string
       final exportData = await ExportService.exportDataToString(
-        transactions: recentTransactions,
+        transactions: transactions,
         accounts: accounts,
         budgets: budgets,
       );
 
-      // Parse the export data back to Map
       return json.decode(exportData);
     } catch (e) {
       print('Error getting finance info: $e');
@@ -190,134 +159,105 @@ class ChatController extends GetxController {
     }
   }
 
-  /// Send a message to the chat API
   Future<void> sendMessage(String message) async {
     if (message.trim().isEmpty) return;
 
-    // Create a placeholder for the assistant's streaming response
-    ChatMessage? streamingMessage;
-    int streamingMessageIndex = -1;
+    int streamingIndex = -1;
 
     try {
       isSending.value = true;
       errorMessage.value = '';
 
-      // Add user message to chat
-      final userMessage = ChatMessage(
-        role: 'user',
-        content: message.trim(),
-        timestamp: DateTime.now(),
+      // Add user message
+      messages.add(
+        ChatMessage(
+          role: 'user',
+          content: message.trim(),
+          timestamp: DateTime.now(),
+        ),
       );
-      messages.add(userMessage);
       messageController.clear();
-
-      // Scroll to bottom
       _scrollToBottom();
-
-      // Save chat history
       await _saveChatHistory();
 
-      // Get finance info
+      // Get finance info and chat history
       final financeInfo = await _getFinanceInfo();
-
-      // Prepare chat history for API using configurable limit
-      final apiChatHistory = messages
+      final apiHistory = messages
           .skip(
             messages.length > historyLimit.value
                 ? messages.length - historyLimit.value
                 : 0,
           )
-          .map((msg) => msg.toApiFormat())
+          .map((m) => m.toApiFormat())
           .toList();
 
-      // Add placeholder message for streaming response
-      streamingMessage = ChatMessage(
-        role: 'assistant',
-        content: '',
-        timestamp: DateTime.now(),
+      // Add placeholder for streaming
+      final timestamp = DateTime.now();
+      messages.add(
+        ChatMessage(role: 'assistant', content: '', timestamp: timestamp),
       );
-      messages.add(streamingMessage);
-      streamingMessageIndex = messages.length - 1;
+      streamingIndex = messages.length - 1;
 
-      // Send to API with streaming
+      // Send to API
       await ChatService.sendMessageStream(
         userQuery: message.trim(),
         financeInfo: financeInfo,
-        chatHistory: apiChatHistory,
-        onChunk: (responseText) {
-          // Update the streaming message with the latest chunk
-          if (streamingMessageIndex >= 0 &&
-              streamingMessageIndex < messages.length) {
-            messages[streamingMessageIndex] = ChatMessage(
+        chatHistory: apiHistory,
+        onChunk: (text) {
+          if (streamingIndex >= 0 && streamingIndex < messages.length) {
+            messages[streamingIndex] = ChatMessage(
               role: 'assistant',
-              content: responseText,
-              timestamp: streamingMessage!.timestamp,
+              content: text,
+              timestamp: timestamp,
             );
             messages.refresh();
             _scrollToBottom();
           }
         },
         onComplete: () async {
-          // Check if we actually got content
-          if (streamingMessageIndex >= 0 &&
-              streamingMessageIndex < messages.length) {
-            final finalMessage = messages[streamingMessageIndex];
-            if (finalMessage.content.isEmpty) {
-              // If no content was received, show error
-              messages[streamingMessageIndex] = ChatMessage(
-                role: 'assistant',
-                content:
-                    'Sorry, I didn\'t receive a proper response. Please try again.',
-                timestamp: streamingMessage!.timestamp,
-              );
-            }
+          if (streamingIndex >= 0 && messages[streamingIndex].content.isEmpty) {
+            messages[streamingIndex] = ChatMessage(
+              role: 'assistant',
+              content: 'Sorry, no response received. Please try again.',
+              timestamp: timestamp,
+            );
           }
-
-          // Save updated chat history when streaming is complete
           await _saveChatHistory();
           _scrollToBottom();
         },
         onError: (error) {
-          errorMessage.value = 'Failed to send message: $error';
-          print('Error sending message: $error');
-
-          // Replace streaming message with error
-          if (streamingMessageIndex >= 0 &&
-              streamingMessageIndex < messages.length) {
-            messages[streamingMessageIndex] = ChatMessage(
+          errorMessage.value = 'Failed: $error';
+          if (streamingIndex >= 0) {
+            messages[streamingIndex] = ChatMessage(
               role: 'assistant',
-              content: 'Sorry, I encountered an error: $error',
-              timestamp: streamingMessage!.timestamp,
+              content: 'Error: $error',
+              timestamp: timestamp,
             );
           }
         },
       );
     } catch (e) {
-      errorMessage.value = 'Failed to send message: ${e.toString()}';
-      print('Error sending message: $e');
-
-      // Replace or add error message
-      if (streamingMessageIndex >= 0 &&
-          streamingMessageIndex < messages.length) {
-        messages[streamingMessageIndex] = ChatMessage(
+      errorMessage.value = 'Failed: $e';
+      if (streamingIndex >= 0) {
+        messages[streamingIndex] = ChatMessage(
           role: 'assistant',
-          content: 'Sorry, I encountered an error: ${e.toString()}',
-          timestamp: streamingMessage!.timestamp,
-        );
-      } else {
-        final errorMsg = ChatMessage(
-          role: 'assistant',
-          content: 'Sorry, I encountered an error: ${e.toString()}',
+          content: 'Error: $e',
           timestamp: DateTime.now(),
         );
-        messages.add(errorMsg);
+      } else {
+        messages.add(
+          ChatMessage(
+            role: 'assistant',
+            content: 'Error: $e',
+            timestamp: DateTime.now(),
+          ),
+        );
       }
     } finally {
       isSending.value = false;
     }
   }
 
-  /// Clear all chat history (both local UI and storage)
   Future<void> clearChat() async {
     try {
       messages.clear();
@@ -329,15 +269,10 @@ class ChatController extends GetxController {
     }
   }
 
-  /// Delete only user messages from chat history
   Future<void> deleteUserHistory() async {
     try {
-      // Remove all user messages, keep only assistant messages
-      messages.removeWhere((msg) => msg.role == 'user');
-
-      // Save updated chat history
+      messages.removeWhere((m) => m.role == 'user');
       await _saveChatHistory();
-
       errorMessage.value = '';
     } catch (e) {
       print('Error deleting user history: $e');
@@ -345,7 +280,6 @@ class ChatController extends GetxController {
     }
   }
 
-  /// Scroll to bottom of chat
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (scrollController.hasClients) {
