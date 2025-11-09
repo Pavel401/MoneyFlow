@@ -204,18 +204,8 @@ class ChatScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  TextButton.icon(
-                    onPressed: () async {
-                      await ChatService.resetBaseUrl();
-                      final defaultUrl = await ChatService.getBaseUrl();
-                      baseUrlController.text = defaultUrl;
-                      validationMessage.value = 'Reset to default';
-                    },
-                    icon: const Icon(Icons.refresh, size: 16),
-                    label: const Text('Reset to Default'),
-                  ),
-                  const Spacer(),
                   Obx(
                     () => isValidating.value
                         ? const SizedBox(

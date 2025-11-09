@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatService {
-  static const String _defaultBaseUrl =
-      'https://your-finance-bro-agent-production.up.railway.app';
+  static const String _defaultBaseUrl = kDebugMode
+      ? 'https://your-finance-bro-agent-production.up.railway.app'
+      : "";
   static const String _baseUrlKey = 'chat_base_url';
 
   /// Get the current base URL from SharedPreferences
@@ -54,7 +56,7 @@ class ChatService {
           .get(Uri.parse(cleanUrl))
           .timeout(const Duration(seconds: 5));
 
-      return response.statusCode < 500; // Accept any non-server error
+      return response.statusCode < 500;
     } catch (e) {
       return false;
     }
