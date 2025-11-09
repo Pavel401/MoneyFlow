@@ -548,22 +548,22 @@ class ChatScreen extends StatelessWidget {
                 'User History',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _showDeleteUserHistoryDialog(context, controller);
-                  },
-                  icon: const Icon(Icons.person_remove_outlined, size: 18),
-                  label: const Text('Delete User Messages'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.errorRed,
-                    side: const BorderSide(color: AppTheme.errorRed),
-                  ),
-                ),
-              ),
+              // const SizedBox(height: 8),
+              // SizedBox(
+              //   width: double.infinity,
+              //   child: OutlinedButton.icon(
+              //     onPressed: () {
+              //       Navigator.pop(context);
+              //       _showDeleteUserHistoryDialog(context, controller);
+              //     },
+              //     icon: const Icon(Icons.person_remove_outlined, size: 18),
+              //     label: const Text('Delete User Messages'),
+              //     style: OutlinedButton.styleFrom(
+              //       foregroundColor: AppTheme.errorRed,
+              //       side: const BorderSide(color: AppTheme.errorRed),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
