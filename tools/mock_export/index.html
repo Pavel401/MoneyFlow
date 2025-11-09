@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MoneyApp Mock Export JSON Generator</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 24px; color: #111; }
+    h1 { margin: 0 0 8px; font-size: 20px; }
+    p { margin: 6px 0 16px; color: #444; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #fff; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .field { display: flex; flex-direction: column; min-width: 200px; }
+    label { font-size: 12px; color: #555; margin-bottom: 6px; }
+    input, select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+    button { padding: 10px 14px; border-radius: 6px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; }
+    button.secondary { background: #fff; color: #111; }
+    .actions { display: flex; gap: 8px; align-items: center; }
+    textarea { width: 100%; min-height: 320px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; }
+    small { color: #666; }
+  </style>
+  <script>
+    // Simple UUID v4 generator
+    function uuidv4() {
+      // Not cryptographically strong; sufficient for mock data
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    // Random helpers
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function randFloat(min, max, digits = 2) {
+      const n = Math.random() * (max - min) + min; return parseFloat(n.toFixed(digits));
+    }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    const TX_TYPES = ['credit','debit','transfer'];
+    const TX_CATEGORIES = ['food','grocery','transport','entertainment','shopping','healthcare','education','utilities','fuel','transfer','other'];
+    const BANK_TYPES = ['savings','current','creditCard','wallet'];
+    const BANKS = ['HDFC Bank','ICICI Bank','SBI','Axis Bank','Kotak Bank','Yes Bank','Bank of Baroda'];
+    const MERCHANTS = ['Amazon','Flipkart','Swiggy','Zomato','Uber','Ola','BigBazaar','Reliance','Myntra','DMart','BookMyShow'];
+    const PLACES = ['Mumbai','Bengaluru','Delhi','Hyderabad','Chennai','Pune','Kolkata'];
+
+    function monthRange(yearsBack) {
+      const months = [];
+      const now = new Date();
+      const start = new Date(now);
+      start.setMonth(start.getMonth() - (yearsBack * 12) + 1);
+      start.setDate(1);
+      const cursor = new Date(start);
+      while (cursor <= now) {
+        months.push({ y: cursor.getFullYear(), m: cursor.getMonth() + 1 });
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+      return months; // ascending order
+    }
+
+    function maskAccountNumber(num) {
+      return num.length <= 4 ? num : `${'*'.repeat(num.length - 4)}${num.slice(-4)}`;
+    }
+
+    function randomAccountNumber() {
+      let s = '';
+      const len = pick([10, 12, 14, 16]);
+      for (let i = 0; i < len; i++) s += randInt(0, 9);
+      return s;
+    }
+
+    function genAccounts(count) {
+      const accounts = [];
+      for (let i = 0; i < count; i++) {
+        const id = uuidv4();
+        const createdAt = new Date(); createdAt.setMonth(createdAt.getMonth() - randInt(1, 30));
+        const updatedAt = new Date();
+        const accountNumber = randomAccountNumber();
+        const bankName = pick(BANKS);
+        const accountType = pick(BANK_TYPES);
+        accounts.push({
+          id,
+          accountName: `${bankName} ${accountType === 'creditCard' ? 'Card' : 'Account'}`,
+          accountNumber,
+          bankName,
+          accountType,
+          balance: randFloat(1000, 200000),
+          isActive: Math.random() > 0.05,
+          createdAt: createdAt.toISOString(),
+          updatedAt: updatedAt.toISOString(),
+          ifscCode: `IFSC${randInt(1000,9999)}`,
+          branchName: `${pick(PLACES)} Branch`,
+          description: `Primary ${accountType} with ${bankName}`,
+        });
+      }
+      return accounts;
+    }
+
+    function titleFor(txType, category) {
+      if (txType === 'transfer') return 'Account Transfer';
+      if (txType === 'credit') return pick(['Salary','Refund','Cashback','Interest Credit','Transfer In']);
+      // debit
+      const merch = pick(MERCHANTS);
+      return `${merch} purchase`;
+    }
+
+    function descriptionFor(txType, category) {
+      if (txType === 'transfer') return 'Funds moved between accounts';
+      if (txType === 'credit') return pick(['Monthly salary credit','Refund processed','Cashback received','Interest credited']);
+      return pick(['POS transaction','Online order','Bill payment','UPI payment','Subscription charge']);
+    }
+
+    function genTransactions(months, accounts, avgPerMonth) {
+      const out = [];
+      for (const {y, m} of months) {
+        const count = Math.max(1, Math.round(randFloat(avgPerMonth * 0.6, avgPerMonth * 1.4)));
+        for (let i = 0; i < count; i++) {
+          const id = uuidv4();
+          const day = randInt(1, new Date(y, m, 0).getDate());
+          const hour = randInt(0, 23); const min = randInt(0, 59); const sec = randInt(0,59);
+          const date = new Date(y, m - 1, day, hour, min, sec);
+          const type = pick(TX_TYPES);
+          const category = type === 'transfer' ? 'transfer' : pick(TX_CATEGORIES.filter(c => c !== 'transfer'));
+          const amount = type === 'credit' ? randFloat(200, 200000) : randFloat(50, 50000);
+          const account = pick(accounts);
+          out.push({
+            id,
+            date: date.toISOString(),
+            type,
+            title: titleFor(type, category),
+            description: descriptionFor(type, category),
+            amount,
+            category,
+            location: Math.random() > 0.6 ? pick(PLACES) : null,
+            photos: [],
+            smsContent: Math.random() > 0.8 ? `Txn ${id.slice(0,8)} of INR ${amount} at ${pick(MERCHANTS)}` : null,
+            accountId: account.id,
+          });
+        }
+      }
+      // keep most recent first like typical views (export doesn’t require order, but ok)
+      out.sort((a,b) => new Date(b.date) - new Date(a.date));
+      return out;
+    }
+
+    function genBudgets(months) {
+      const now = new Date();
+      return months.map(({y,m}) => ({
+        id: uuidv4(),
+        year: y,
+        month: m,
+        amount: randFloat(10000, 200000),
+        createdAt: new Date(y, m - 1, randInt(1,7)).toISOString(),
+        updatedAt: new Date(y, m - 1, randInt(20,28)).toISOString(),
+      }));
+    }
+
+    function buildExport({ years, accountsCount, avgTxPerMonth }) {
+      const months = monthRange(years);
+      const accounts = genAccounts(accountsCount);
+      const transactions = genTransactions(months, accounts, avgTxPerMonth);
+      const budgets = genBudgets(months);
+      const exportInfo = {
+        exportDate: new Date().toISOString(),
+        appVersion: '1.0.0',
+        dataFormat: 'json',
+        totalTransactions: transactions.length,
+        totalAccounts: accounts.length,
+        totalBudgets: budgets.length,
+      };
+      return { exportInfo, transactions, accounts, budgets };
+    }
+
+    function download(filename, text) {
+      const blob = new Blob([text], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function onGenerate() {
+      const years = parseInt(document.getElementById('years').value, 10);
+      const accountsCount = parseInt(document.getElementById('accounts').value, 10);
+      const avgTxPerMonth = parseInt(document.getElementById('avgTx').value, 10);
+      const data = buildExport({ years, accountsCount, avgTxPerMonth });
+      const json = JSON.stringify(data, null, 2);
+      document.getElementById('output').value = json;
+      document.getElementById('summary').textContent = `Generated ${data.exportInfo.totalTransactions} transactions, ${data.exportInfo.totalAccounts} accounts, ${data.exportInfo.totalBudgets} budgets.`;
+    }
+
+    function onDownload() {
+      const text = document.getElementById('output').value.trim();
+      if (!text) return;
+      download('output.json', text);
+    }
+  </script>
+</head>
+<body>
+  <h1>Mock Export JSON Generator</h1>
+  <p>Create a mock MoneyApp export JSON (matching keys and schema) with fake data for up to 3 years.</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field">
+        <label for="years">Years of data (max 3)</label>
+        <select id="years">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="accounts">Number of accounts</label>
+        <input id="accounts" type="number" min="1" max="10" step="1" value="3" />
+      </div>
+      <div class="field">
+        <label for="avgTx">Avg transactions per month</label>
+        <input id="avgTx" type="number" min="5" max="200" step="1" value="40" />
+      </div>
+    </div>
+    <div class="actions" style="margin-top:12px;">
+      <button onclick="onGenerate()">Generate</button>
+      <button class="secondary" onclick="onDownload()">Download as output.json</button>
+      <small id="summary"></small>
+    </div>
+  </div>
+
+  <div class="card">
+    <label for="output">Generated JSON (read-only)</label>
+    <textarea id="output" readonly placeholder="Click Generate to preview JSON..."></textarea>
+  </div>
+
+  <p><small>Schema matches ExportService: exportInfo, transactions, accounts, budgets. All dates are ISO 8601.</small></p>
+</body>
+</html>
+
