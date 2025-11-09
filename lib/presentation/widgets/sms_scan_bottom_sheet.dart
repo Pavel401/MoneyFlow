@@ -247,6 +247,45 @@ class _SmsScanBottomSheetState extends State<SmsScanBottomSheet> {
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: AppTheme.greyDark),
                         ),
+                        SizedBox(height: 1.h),
+                        // Security badge
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 2.w,
+                            vertical: 0.8.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: Colors.green.shade200,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.shield_outlined,
+                                size: 14,
+                                color: Colors.green.shade700,
+                              ),
+                              SizedBox(width: 1.w),
+                              Expanded(
+                                child: Text(
+                                  'Processed locally on your device • No cloud uploads',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Colors.green.shade900,
+                                        fontSize: 8.5.sp,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
 
                         SizedBox(height: 2.h),
 
