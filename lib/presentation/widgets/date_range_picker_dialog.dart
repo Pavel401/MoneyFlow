@@ -243,6 +243,38 @@ class _DateRangePickerDialogState extends State<DateRangePickerDialog> {
                 ],
               ),
             ),
+            SizedBox(height: 1.h),
+
+            // Security badge
+            Container(
+              padding: EdgeInsets.all(2.w),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.green.shade200,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.lock_outline,
+                    color: Colors.green.shade700,
+                    size: 16,
+                  ),
+                  SizedBox(width: 2.w),
+                  Expanded(
+                    child: Text(
+                      'All data processed locally on your device',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.green.shade900,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
