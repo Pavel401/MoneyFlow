@@ -33,7 +33,7 @@ class ExportService {
                 'title': transaction.title,
                 'description': transaction.description,
                 'amount': transaction.amount,
-                'category': transaction.category.name,
+                'category': _mapCategoryForApi(transaction.category.name),
                 'location': transaction.location,
                 'photos': transaction.photos,
                 'smsContent': transaction.smsContent,
@@ -136,7 +136,7 @@ class ExportService {
                 'title': transaction.title,
                 'description': transaction.description,
                 'amount': transaction.amount,
-                'category': transaction.category.name,
+                'category': _mapCategoryForApi(transaction.category.name),
                 'location': transaction.location,
                 'photos': transaction.photos,
                 'smsContent': transaction.smsContent,
@@ -218,5 +218,15 @@ Total Budget Amount: ₹${totalBudgetAmount.toStringAsFixed(2)}
 
 Exported on: ${DateFormat('MMM dd, yyyy \'at\' hh:mm a').format(DateTime.now())}
     ''';
+  }
+
+  /// Maps app categories to API-compatible categories
+  /// API only accepts 'transfer' or 'other'
+  static String _mapCategoryForApi(String category) {
+    if (category == 'transfer') {
+      return 'transfer';
+    }
+    // All other categories (food, grocery, transport, etc.) map to 'other'
+    return 'other';
   }
 }
