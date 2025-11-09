@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/services/chat_service.dart';
 import '../controllers/chat_controller.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
@@ -157,78 +160,210 @@ class ChatScreen extends StatelessWidget {
   }
 
   void _showSettingsDialog(BuildContext context, ChatController controller) {
+    final baseUrlController = TextEditingController();
+    final isValidating = false.obs;
+    final validationMessage = ''.obs;
+
+    // Load current base URL
+    ChatService.getBaseUrl().then((url) {
+      baseUrlController.text = url;
+    });
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Chat Settings'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'History Limit',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Number of messages to send as context to the AI:',
-              style: TextStyle(fontSize: 12, color: AppTheme.greyDark),
-            ),
-            const SizedBox(height: 16),
-            Obx(
-              () => Row(
-                children: [
-                  Expanded(
-                    child: Slider(
-                      value: controller.historyLimit.value.toDouble(),
-                      min: 2,
-                      max: 20,
-                      divisions: 18,
-                      label: controller.historyLimit.value.toString(),
-                      activeColor: AppTheme.primaryBlack,
-                      onChanged: (value) {
-                        controller.historyLimit.value = value.toInt();
-                      },
-                    ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Backend URL Section
+              const Text(
+                'Backend URL',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Configure the Finance Bro Agent backend URL:',
+                style: TextStyle(fontSize: 12, color: AppTheme.greyDark),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: baseUrlController,
+                decoration: InputDecoration(
+                  hintText: 'https://your-backend-url.com',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  Container(
-                    width: 40,
-                    alignment: Alignment.center,
-                    child: Text(
-                      '${controller.historyLimit.value}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: () async {
+                      await ChatService.resetBaseUrl();
+                      final defaultUrl = await ChatService.getBaseUrl();
+                      baseUrlController.text = defaultUrl;
+                      validationMessage.value = 'Reset to default';
+                    },
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: const Text('Reset to Default'),
+                  ),
+                  const Spacer(),
+                  Obx(
+                    () => isValidating.value
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : TextButton.icon(
+                            onPressed: () async {
+                              final url = baseUrlController.text.trim();
+                              if (url.isEmpty) {
+                                validationMessage.value = 'URL cannot be empty';
+                                return;
+                              }
+
+                              isValidating.value = true;
+                              validationMessage.value = 'Validating...';
+
+                              final isValid = await ChatService.validateUrl(
+                                url,
+                              );
+                              isValidating.value = false;
+
+                              if (isValid) {
+                                await ChatService.setBaseUrl(url);
+                                validationMessage.value = '✓ Valid & saved';
+                              } else {
+                                validationMessage.value = '✗ Cannot reach URL';
+                              }
+                            },
+                            icon: const Icon(
+                              Icons.check_circle_outline,
+                              size: 16,
+                            ),
+                            label: const Text('Test & Save'),
+                          ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 16),
-            const Text(
-              'User History',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _showDeleteUserHistoryDialog(context, controller);
+              Obx(
+                () => validationMessage.value.isNotEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          validationMessage.value,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: validationMessage.value.contains('✓')
+                                ? Colors.green
+                                : validationMessage.value.contains('✗')
+                                ? AppTheme.errorRed
+                                : AppTheme.greyDark,
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () async {
+                  final url = Uri.parse(
+                    'https://github.com/Pavel401/Your-Finance-Bro--Agent',
+                  );
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
                 },
-                icon: const Icon(Icons.person_remove_outlined, size: 18),
-                label: const Text('Delete User Messages'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.errorRed,
-                  side: const BorderSide(color: AppTheme.errorRed),
+                child: const Text(
+                  '📚 Backend Repository: Your-Finance-Bro--Agent',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.primaryBlue,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 16),
+
+              // History Limit Section
+              const Text(
+                'History Limit',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Number of messages to send as context to the AI:',
+                style: TextStyle(fontSize: 12, color: AppTheme.greyDark),
+              ),
+              const SizedBox(height: 16),
+              Obx(
+                () => Row(
+                  children: [
+                    Expanded(
+                      child: Slider(
+                        value: controller.historyLimit.value.toDouble(),
+                        min: 2,
+                        max: 20,
+                        divisions: 18,
+                        label: controller.historyLimit.value.toString(),
+                        activeColor: AppTheme.primaryBlack,
+                        onChanged: (value) {
+                          controller.historyLimit.value = value.toInt();
+                        },
+                      ),
+                    ),
+                    Container(
+                      width: 40,
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${controller.historyLimit.value}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 16),
+
+              // User History Section
+              const Text(
+                'User History',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showDeleteUserHistoryDialog(context, controller);
+                  },
+                  icon: const Icon(Icons.person_remove_outlined, size: 18),
+                  label: const Text('Delete User Messages'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.errorRed,
+                    side: const BorderSide(color: AppTheme.errorRed),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -324,15 +459,71 @@ class _ChatMessageBubble extends StatelessWidget {
                   ),
                   child: message.content.isEmpty
                       ? _buildTypingIndicator()
-                      : Text(
+                      : isUser
+                      ? Text(
                           message.content,
                           style: TextStyle(
-                            color: isUser
-                                ? AppTheme.primaryWhite
-                                : AppTheme.primaryBlack,
+                            color: AppTheme.primaryWhite,
                             fontSize: 14,
                             height: 1.4,
                           ),
+                        )
+                      : MarkdownBody(
+                          data: message.content,
+                          styleSheet: MarkdownStyleSheet(
+                            p: const TextStyle(
+                              color: AppTheme.primaryBlack,
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
+                            code: TextStyle(
+                              backgroundColor: AppTheme.greyMedium,
+                              color: AppTheme.primaryBlack,
+                              fontSize: 13,
+                            ),
+                            codeblockDecoration: BoxDecoration(
+                              color: AppTheme.greyMedium,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            blockquote: TextStyle(
+                              color: AppTheme.greyDark,
+                              fontSize: 14,
+                            ),
+                            h1: const TextStyle(
+                              color: AppTheme.primaryBlack,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            h2: const TextStyle(
+                              color: AppTheme.primaryBlack,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            h3: const TextStyle(
+                              color: AppTheme.primaryBlack,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            listBullet: const TextStyle(
+                              color: AppTheme.primaryBlack,
+                              fontSize: 14,
+                            ),
+                            a: const TextStyle(
+                              color: AppTheme.primaryBlue,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                          onTapLink: (text, href, title) async {
+                            if (href != null) {
+                              final url = Uri.parse(href);
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(
+                                  url,
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
+                            }
+                          },
                         ),
                 ),
                 const SizedBox(height: 4),
