@@ -45,14 +45,21 @@ class ChatController extends GetxController {
   final errorMessage = ''.obs;
   final historyLimit = 8.obs;
 
+  // Data sharing preferences
+  final transactionDays = 30.obs;
+  final budgetMonths = 12.obs;
+
   static const _chatHistoryKey = 'chat_history';
   static const _historyLimitKey = 'chat_history_limit';
+  static const _transactionDaysKey = 'chat_transaction_days';
+  static const _budgetMonthsKey = 'chat_budget_months';
 
   @override
   void onInit() {
     super.onInit();
     _loadChatHistory();
     _loadHistoryLimit();
+    _loadDataPreferences();
   }
 
   @override
@@ -88,6 +95,16 @@ class ChatController extends GetxController {
     }
   }
 
+  Future<void> _loadDataPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      transactionDays.value = prefs.getInt(_transactionDaysKey) ?? 30;
+      budgetMonths.value = prefs.getInt(_budgetMonthsKey) ?? 12;
+    } catch (e) {
+      print('Error loading data preferences: $e');
+    }
+  }
+
   Future<void> updateHistoryLimit(int newLimit) async {
     if (newLimit < 1 || newLimit > 50) {
       errorMessage.value = 'Limit must be between 1 and 50';
@@ -99,6 +116,26 @@ class ChatController extends GetxController {
       await prefs.setInt(_historyLimitKey, newLimit);
     } catch (e) {
       print('Error saving limit: $e');
+    }
+  }
+
+  Future<void> updateDataPreferences(int days, int months) async {
+    if (days < 1 || days > 365) {
+      errorMessage.value = 'Transaction days must be between 1 and 365';
+      return;
+    }
+    if (months < 1 || months > 60) {
+      errorMessage.value = 'Budget months must be between 1 and 60';
+      return;
+    }
+    transactionDays.value = days;
+    budgetMonths.value = months;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_transactionDaysKey, days);
+      await prefs.setInt(_budgetMonthsKey, months);
+    } catch (e) {
+      print('Error saving data preferences: $e');
     }
   }
 
@@ -115,24 +152,45 @@ class ChatController extends GetxController {
   Future<Map<String, dynamic>> _getFinanceInfo() async {
     try {
       final now = DateTime.now();
-      final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+
+      // Use configurable transaction days (default 30 days)
+      final transactionCutoff = now.subtract(
+        Duration(days: transactionDays.value),
+      );
 
       final transactions = Get.find<TransactionController>().transactions
-          .where((t) => t.date.isAfter(thirtyDaysAgo))
+          .where((t) => t.date.isAfter(transactionCutoff))
           .toList();
 
       final accounts = Get.find<AccountController>().accounts.toList();
 
-      final budgets = Get.find<BudgetController>().monthlyBudgets.map((m) {
-        return Budget(
-          id: const Uuid().v4(),
-          year: m['year'] as int? ?? now.year,
-          month: m['month'] as int? ?? now.month,
-          amount: (m['amount'] as num?)?.toDouble() ?? 0.0,
-          createdAt: now,
-          updatedAt: now,
-        );
-      }).toList();
+      // Use configurable budget months (default 12 months / 1 year)
+      final budgetCutoff = DateTime(
+        now.year,
+        now.month - budgetMonths.value,
+        1,
+      );
+
+      final budgets = Get.find<BudgetController>().monthlyBudgets
+          .where((m) {
+            final budgetDate = DateTime(
+              m['year'] as int? ?? now.year,
+              m['month'] as int? ?? now.month,
+              1,
+            );
+            return budgetDate.isAfter(budgetCutoff);
+          })
+          .map((m) {
+            return Budget(
+              id: const Uuid().v4(),
+              year: m['year'] as int? ?? now.year,
+              month: m['month'] as int? ?? now.month,
+              amount: (m['amount'] as num?)?.toDouble() ?? 0.0,
+              createdAt: now,
+              updatedAt: now,
+            );
+          })
+          .toList();
 
       final exportData = await ExportService.exportDataToString(
         transactions: transactions,
