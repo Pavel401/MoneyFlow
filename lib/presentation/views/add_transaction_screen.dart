@@ -645,7 +645,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _pickFromCamera() async {
-    final imagePath = await PhotoService.pickImageFromCamera();
+    final imagePath = await PhotoService.pickImageFromCamera(context: context);
     if (imagePath != null) {
       setState(() {
         _selectedPhotos.add(imagePath);
@@ -656,6 +656,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Future<void> _pickFromGallery() async {
     final imagePaths = await PhotoService.pickImages(
       maxImages: 5 - _selectedPhotos.length,
+      context: context,
     );
     if (imagePaths.isNotEmpty) {
       setState(() {
